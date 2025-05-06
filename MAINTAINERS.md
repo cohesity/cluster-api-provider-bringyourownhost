@@ -4,9 +4,7 @@
 
 | Maintainer       | GitHub ID                                              | Affiliation                              |
 |------------------|--------------------------------------------------------|------------------------------------------|
-| Dharmjit Singh   | [dharmjit](https://github.com/dharmjit/ )              | [VMware](https://www.github.com/vmware/) |
-| Jamie Monserrate | [jamiemonserrate](https://github.com/jamiemonserrate ) | [VMware](https://www.github.com/vmware/) |
-| Shivani Singhal  | [shivi28](https://github.com/shivi28 )                 | [VMware](https://www.github.com/vmware/) |
+| Abhishek Munie   | [abhishekmunie](https://github.com/abhishekmunie )              | [Cohesity](https://www.github.com/cohesity) |
 
 ## Core Contributors and Stakeholders
 

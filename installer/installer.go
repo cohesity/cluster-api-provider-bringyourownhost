@@ -7,7 +7,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/installer/internal/algo"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/installer/internal/algo"
 )
 
 // K8sInstaller represent k8s installer interface

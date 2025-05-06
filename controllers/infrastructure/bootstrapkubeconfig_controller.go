@@ -8,8 +8,8 @@ import (
 	b64 "encoding/base64"
 	"time"
 
-	infrastructurev1beta1 "github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
-	"github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/common/bootstraptoken"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/common/bootstraptoken"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientcmdlatest "k8s.io/client-go/tools/clientcmd/api/latest"

@@ -13,9 +13,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/agent/cloudinit"
-	"github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/agent/registration"
-	"github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/common"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/common"
 )
 
 var (

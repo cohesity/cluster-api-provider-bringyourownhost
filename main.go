@@ -23,9 +23,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	byohcontrollers "github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/controllers/infrastructure"
+	byohcontrollers "github.com/cohesity/cluster-api-provider-bringyourownhost/controllers/infrastructure"
 
-	infrastructurev1beta1 "github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 
 	//+kubebuilder:scaffold:imports
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"

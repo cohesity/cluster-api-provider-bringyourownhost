@@ -8,9 +8,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/agent/registration"
-	infrastructurev1beta1 "github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
-	"github.com/vmware-tanzu/cluster-api-provider-bringyourownhost/test/builder"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 )
 
 var _ = Describe("Host Registrar Tests", func() {

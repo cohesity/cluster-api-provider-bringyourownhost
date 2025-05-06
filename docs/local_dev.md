@@ -4,7 +4,7 @@ This doc provides instructions about how to test Bring Your Own Host Provider on
 
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) for provisioning a management cluster
 - [Docker](https://docs.docker.com/engine/install/) run for creating hosts to be used as a capacity for BYO Host machines
-- [BYOH](https://github.com/vmware-tanzu/cluster-api-provider-bringyourownhost) provider to add the above hosts to the aforemention workload cluster
+- [BYOH](https://github.com/cohesity/cluster-api-provider-bringyourownhost) provider to add the above hosts to the aforemention workload cluster
 - [Tilt](https://docs.tilt.dev/install.html) for faster iterative development
 
 ## Pre-requisites
@@ -13,7 +13,7 @@ It is required to have a docker image to be used when doing docker run for creat
 
 __Clone BYOH Repo__
 ```shell
-git clone git@github.com:vmware-tanzu/cluster-api-provider-bringyourownhost.git
+git clone git@github.com:cohesity/cluster-api-provider-bringyourownhost.git
 ```
 
 ## Setting up the management cluster
@@ -41,19 +41,19 @@ Installing cluster API into the Kubernetes cluster will turn it into a Cluster A
 We are going using [tilt](https://tilt.dev/) in order to do so, so you can have your local environment set up for rapid iterations, as described in
 [Developing Cluster API with Tilt](https://cluster-api.sigs.k8s.io/developer/tilt.html).
 
-In order to do so you need to clone both https://github.com/kubernetes-sigs/cluster-api/ and https://github.com/vmware-tanzu/cluster-api-provider-bringyourownhost locally;
+In order to do so you need to clone both https://github.com/kubernetes-sigs/cluster-api/ and https://github.com/cohesity/cluster-api-provider-bringyourownhost locally;
 
 __Clone CAPI Repo__
 
 ```shell
 git clone git@github.com:kubernetes-sigs/cluster-api.git
 cd cluster-api
-git checkout v1.0.0 
+git checkout v1.0.0
 ```
 
 __Create a tilt-settings.json file__
 
-Next, create a tilt-settings.json file and place it in your local copy of cluster-api:  
+Next, create a tilt-settings.json file and place it in your local copy of cluster-api:
 
 ```shell
 cat > tilt-settings.json <<EOF
@@ -152,7 +152,7 @@ Check if the hosts registered itself into the management cluster.
 
 Open another shell and run
 ```shell
-kubectl get byohosts 
+kubectl get byohosts
 ```
 
 Open a new shell and change directory to `cluster-api-provider-bringyourownhost` repository. Run below commands
@@ -174,7 +174,7 @@ cat test/e2e/data/infrastructure-provider-byoh/v1beta1/templates/docker/cluster-
 ```
 
 ```shell
-kubectl get machines 
+kubectl get machines
 ```
 
 Dig into host when machine gets provisioned.
@@ -182,9 +182,9 @@ Dig into host when machine gets provisioned.
 ```shell
 kubectl get kubeadmconfig
 
-kubectl get BYOmachines  
+kubectl get BYOmachines
 
-kubectl get BYOhost 
+kubectl get BYOhost
 ```
 
 Deploy a CNI solution
