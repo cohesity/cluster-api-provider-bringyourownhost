@@ -158,7 +158,7 @@ define WARNING
 
 ** WARNING **
 These tests modify system settings - and do **NOT** revert them at the end of the test.
-A list of changes can be found below. We **highly** recommend running these tests in a VM. 
+A list of changes can be found below. We **highly** recommend running these tests in a VM.
 
 Running e2e tests locally will change the following host config
 - enable the kernel modules: overlay & bridge network filter
@@ -177,7 +177,7 @@ take-user-input:
 	@echo "$$WARNING"
 	@read -p "Do you want to proceed [Y/n]?" REPLY; \
 	if [[ $$REPLY = "Y" || $$REPLY = "y" ]]; then echo starting e2e test; exit 0 ; else echo aborting; exit 1; fi
-	
+
 
 
 $(GINKGO): # Build ginkgo from tools folder.
@@ -226,7 +226,7 @@ host-agent-binary: $(RELEASE_DIR)
 		-e GOARCH=$(GOARCH) \
 		-v "$$(pwd):/workspace$(DOCKER_VOL_OPTS)" \
 		-w /workspace \
-		golang:1.20.7 \
+		golang:1.24.2 \
 		go build -buildvcs=false -a -ldflags "$(GOLDFLAGS)" \
 		-o ./bin/$(notdir $(RELEASE_BINARY))-$(GOOS)-$(GOARCH) $(HOST_AGENT_DIR)
 
