@@ -64,7 +64,7 @@ function isIPOccupied() {
 
     # should not use the gateway address
     for gateway in ${gateways}
-    do 
+    do
         if [ "${gateway}" == "${ip}" ]; then
             return 1
         fi
@@ -83,7 +83,7 @@ function num2IP() {
     c=$((num>>8&0xff))
     d=$((num&0xff))
     echo "$a.$b.$c.$d"
-}  
+}
 
 function binary2IP() {
     num=`echo "ibase=2;  $1" | bc`
@@ -128,7 +128,7 @@ function calcControlPlaneIP() {
     minIPint=`echo "ibase=2; ${minIPBinary}"|bc`
     maxIPint=`echo "ibase=2; ${maxIPBinary}"|bc`
 
-    for((i=${minIPint};i<=${maxIPint};i++));  
+    for((i=${minIPint};i<=${maxIPint};i++));
     do
         ip=$(num2IP ${i})
 
@@ -151,8 +151,8 @@ function installByohProvider() {
 
     runCmd "clusterctl init --infrastructure byoh" 0 " Transforming the Kubernetes cluster into a management cluster..."
     # Waiting for byoh provider is totally ready
-    for((i=1;i<=${maxRunTimes};i++));  
-    do  
+    for((i=1;i<=${maxRunTimes};i++));
+    do
         #byohStatus=$(kubectl get pods --all-namespaces | grep byoh-controller-manager | awk '{print $4}')
         replicas=$(kubectl get deployment byoh-controller-manager -n byoh-system -o json | jq .status.readyReplicas)
         if [ "${replicas}" == "1" ] ; then
@@ -277,7 +277,7 @@ function cleanUp(){
     local i=1
 
     kind delete clusters ${managerClusterName}
-    for ((i=1;i<=${byohNums};i++)); 
+    for ((i=1;i<=${byohNums};i++));
     do
         docker rm -f host${i}
     done
@@ -285,31 +285,31 @@ function cleanUp(){
 
 function readArgs() {
     TEMP=`getopt -o nm:c:k: --long cni,md:,cp:,kv:`
-    if [ $? != 0 ] ; then 
-        echo "Terminating..." >&2 
-        exit 1 
+    if [ $? != 0 ] ; then
+        echo "Terminating..." >&2
+        exit 1
     fi
     # Note the quotes around `$TEMP': they are essential!
     while true ; do
         case "$1" in
-            -n|--cni) 
+            -n|--cni)
                 defaultCni="1"
-                shift 
+                shift
                 ;;
-            -m|--md) 
+            -m|--md)
                 workerCount=$2
-                shift 2 
+                shift 2
                 ;;
-            -c|--cp) 
+            -c|--cp)
                 controlPlaneCount=$2
-                shift 2 
+                shift 2
                 ;;
-            -k|--kv) 
+            -k|--kv)
                 kubernetesVersion=$2
-                shift 2 
+                shift 2
                 ;;
-            *) 
-                break 
+            *)
+                break
                 ;;
         esac
     done
@@ -325,13 +325,13 @@ function installCNI(){
 
     # Sometimes work cluster is not entirely ready, it reports error: Unable to connect to the server: dial tcp 172.18.0.5:6443: connect: no route to host
     echo "Applying a CNI for network..."
-    for((i=1;i<=${maxRunTimes};i++));  
+    for((i=1;i<=${maxRunTimes};i++));
     do
         KUBECONFIG=${kubeConfigFile} kubectl apply -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml
         if [ $? -ne 0 ]; then
             sleep ${waitTime}
             continue
-        else 
+        else
             echo "Apply CNI for network successfully"
             cniSucc=1
             break
@@ -349,13 +349,13 @@ function retrieveKubeConfig() {
     local waitTime=1
 
     echo "Retrieving the kubeconfig of workload cluster..."
-    for((i=1;i<=${maxRunTimes};i++));  
-    do   
+    for((i=1;i<=${maxRunTimes};i++));
+    do
         kubectl get secret/${workerClusterName}-kubeconfig 2>&1 | grep -q "not found"
         if [ $? -eq 0 ]; then
             sleep ${waitTime}
             continue
-        else 
+        else
             kubectl get secret/${workerClusterName}-kubeconfig -o json | jq -r .data.value | base64 --decode  > ${kubeConfigFile}
             echo "Retrieve the kubeconfig of workload cluster successfully"
             return
@@ -373,11 +373,11 @@ function checkNodeStatus() {
     local j=1
     local ready=0
 
-    for((i=1;i<=${byohNums};i++)); 
+    for((i=1;i<=${byohNums};i++));
     do
         ready=0
-        for((j=1;j<=${maxRunTimes};j++));  
-        do   
+        for((j=1;j<=${maxRunTimes};j++));
+        do
             KUBECONFIG=${kubeConfigFile} kubectl get nodes host${i} | grep -q "not found"
             if [ $? -eq 0 ]; then
                 sleep ${waitTime}
@@ -436,7 +436,7 @@ function bringUpByoHost(){
     local t=1
     local maxRunTimes=10
     local waitTime=1
-    local KIND_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${managerClusterName}-control-plane) 
+    local KIND_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${managerClusterName}-control-plane)
     local ok=0
 
     cp -f ${HOME}/.kube/config ${manageClusterConfFile}
@@ -453,13 +453,13 @@ function bringUpByoHost(){
         docker exec -d host${i} sh -c "chmod +x /byoh-hostagent && /byoh-hostagent --kubeconfig /management-cluster.conf > /agent.log 2>&1"
 
         ok=0
-        for((t=1;t<=${maxRunTimes};t++));  
+        for((t=1;t<=${maxRunTimes};t++));
         do
             kubectl get byohosts host${i} | grep -q "not found" 2>/dev/null
             if [ $? -eq 0 ]; then
                 sleep ${waitTime}
                 continue
-            else   
+            else
                 echo "byohost object(host${i}) is created successfully..."
                 ok=1
                 break
@@ -485,7 +485,7 @@ function createWorkloadCluster() {
     fi
 
     echo "Creating the workload cluster..."
-    kubectl apply -f ${clusterYamlFile} 
+    kubectl apply -f ${clusterYamlFile}
     if [ $? -ne 0 ]; then
         echo "Create the workload cluster failed"
         exit 1
@@ -516,8 +516,8 @@ It locally will change the following host config
 #####################################################################################################'
 
     echo "${warning}"
-	read -p "Do you want to proceed [Y/N]?" REPLY; 
-	if [[ ${REPLY} != "Y" && ${REPLY} != "y" ]]; then 
+	read -p "Do you want to proceed [Y/N]?" REPLY;
+	if [[ ${REPLY} != "Y" && ${REPLY} != "y" ]]; then
         echo "Aborting..."
         exit 1
     fi
@@ -537,12 +537,12 @@ manageClusterConfFile="${HOME}/.kube/management-cluster.conf"
 kubeConfigFile=/tmp/byoh-cluster-kubeconfig
 reposDir=$(dirname $0)/../
 byohBinaryFile=${reposDir}/bin/byoh-hostagent-linux-amd64
-kubernetesVersion="v1.26.6"
+kubernetesVersion="v1.27.16"
 
 readArgs $@
 userConfirmation
 swapOff
-intallDependencies 
+intallDependencies
 cleanUp
 createKindCluster
 installByohProvider

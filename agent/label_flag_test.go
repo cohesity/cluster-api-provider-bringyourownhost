@@ -10,11 +10,8 @@ import (
 )
 
 var _ = Describe("Label flag for host agent", func() {
-
 	Context("When the label flag is provided", func() {
-		var (
-			labels labelFlags
-		)
+		var labels labelFlags
 		BeforeEach(func() {
 			labels = make(labelFlags)
 		})

@@ -11,11 +11,11 @@ import (
 	"path"
 	"strconv"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/common"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var (
@@ -72,10 +72,10 @@ runCmd:
 		fileName := path.Join(workDir, "file-2.txt")
 		fileOriginContent := "some-content-2"
 		fileAppendContent := "some-content-append-2"
-		filePermission := 0777
+		filePermission := 0o777
 		isAppend := true
 
-		err := os.WriteFile(fileName, []byte(fileOriginContent), 0644)
+		err := os.WriteFile(fileName, []byte(fileOriginContent), 0o644)
 		Expect(err).NotTo(HaveOccurred())
 
 		cloudInitScript := fmt.Sprintf(`write_files:

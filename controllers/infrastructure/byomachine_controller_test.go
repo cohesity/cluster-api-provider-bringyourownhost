@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"strings"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	controllers "github.com/cohesity/cluster-api-provider-bringyourownhost/controllers/infrastructure"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	eventutils "github.com/cohesity/cluster-api-provider-bringyourownhost/test/utils/events"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -80,7 +80,9 @@ var _ = Describe("Controllers/ByomachineController", func() {
 		_, err := reconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      "non-existent-byomachine",
-				Namespace: "non-existent-namespace"}})
+				Namespace: "non-existent-namespace",
+			},
+		})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -101,7 +103,9 @@ var _ = Describe("Controllers/ByomachineController", func() {
 		_, err := reconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      byoMachineWithNonExistingCluster.Name,
-				Namespace: byoMachineWithNonExistingCluster.Namespace}})
+				Namespace: byoMachineWithNonExistingCluster.Namespace,
+			},
+		})
 		Expect(err).To(MatchError("failed to get Cluster/non-existent-cluster: Cluster.cluster.x-k8s.io \"non-existent-cluster\" not found"))
 	})
 
@@ -128,7 +132,6 @@ var _ = Describe("Controllers/ByomachineController", func() {
 		})
 
 		Context("When node.Spec.ProviderID is already set", func() {
-
 			BeforeEach(func() {
 				byoHost = builder.ByoHost(defaultNamespace, "test-node-providerid-host").Build()
 				Expect(k8sClientUncached.Create(ctx, byoHost)).Should(Succeed())
@@ -213,7 +216,6 @@ var _ = Describe("Controllers/ByomachineController", func() {
 				deletedByoMachine := &infrastructurev1beta1.ByoMachine{}
 				err = k8sClientUncached.Get(ctx, byoMachineLookupKey, deletedByoMachine)
 				Expect(err).To(MatchError(fmt.Sprintf("byomachines.infrastructure.cluster.x-k8s.io %q not found", byoMachineLookupKey.Name)))
-
 			})
 		})
 
@@ -322,7 +324,6 @@ var _ = Describe("Controllers/ByomachineController", func() {
 				})
 
 				It("should set paused status of byohost to false when byomachine is not paused", func() {
-
 					ph, err := patch.NewHelper(byoHost, k8sClientUncached)
 					Expect(err).ShouldNot(HaveOccurred())
 					pauseAnnotations := map[string]string{
@@ -340,7 +341,6 @@ var _ = Describe("Controllers/ByomachineController", func() {
 					err = k8sClientUncached.Get(ctx, byoHostLookupKey, createdByoHost)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(createdByoHost.Annotations).NotTo(HaveKey(clusterv1.PausedAnnotation))
-
 				})
 
 				It("should set host platform info from byohost to byomachine", func() {
@@ -374,7 +374,6 @@ var _ = Describe("Controllers/ByomachineController", func() {
 					err = k8sClientUncached.Get(ctx, byoMachineLookupKey, patchedByoMachine)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(patchedByoMachine.Status.HostInfo).To(Equal(byoHost.Status.HostDetails))
-
 				})
 
 				Context("When ByoMachine is deleted", func() {
@@ -484,7 +483,6 @@ var _ = Describe("Controllers/ByomachineController", func() {
 						Expect(k8sClientUncached.Delete(ctx, k8sInstallerConfig)).Should(Succeed())
 					})
 				})
-
 			})
 
 			It("should mark BYOHostReady as False when byomachine is paused", func() {

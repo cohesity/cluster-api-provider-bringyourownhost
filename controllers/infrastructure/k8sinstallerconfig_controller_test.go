@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	infrav1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	eventutils "github.com/cohesity/cluster-api-provider-bringyourownhost/test/utils/events"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -91,12 +91,13 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      "non-existent-k8sinstallerconfig",
-				Namespace: "non-existent-k8sinstallerconfig"}})
+				Namespace: "non-existent-k8sinstallerconfig",
+			},
+		})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("should ignore when owner is not set", func() {
-
 		k8sinstallerconfigWithNoOwner := builder.K8sInstallerConfig(defaultNamespace, defaultK8sInstallerConfigName).
 			WithClusterLabel(defaultClusterName).
 			Build()
@@ -107,12 +108,13 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      k8sinstallerconfigWithNoOwner.Name,
-				Namespace: k8sinstallerconfigWithNoOwner.Namespace}})
+				Namespace: k8sinstallerconfigWithNoOwner.Namespace,
+			},
+		})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("should return error when byomachine does not contain cluster name", func() {
-
 		byoMachineWithNonExistingCluster := builder.ByoMachine(defaultNamespace, defaultByoMachineName).
 			WithOwnerMachine(machine).
 			Build()
@@ -129,12 +131,13 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      k8sinstallerconfigWithNonExistingCluster.Name,
-				Namespace: k8sinstallerconfigWithNonExistingCluster.Namespace}})
+				Namespace: k8sinstallerconfigWithNonExistingCluster.Namespace,
+			},
+		})
 		Expect(err).To(MatchError(util.ErrNoCluster))
 	})
 
 	It("should return error when cluster does not exist", func() {
-
 		byoMachineWithNonExistingCluster := builder.ByoMachine(defaultNamespace, defaultByoMachineName).
 			WithClusterLabel("non-existent-cluster").
 			WithOwnerMachine(machine).
@@ -152,12 +155,13 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      k8sinstallerconfigWithNonExistingCluster.Name,
-				Namespace: k8sinstallerconfigWithNonExistingCluster.Namespace}})
+				Namespace: k8sinstallerconfigWithNonExistingCluster.Namespace,
+			},
+		})
 		Expect(err).To(MatchError("failed to get Cluster/non-existent-cluster: Cluster.cluster.x-k8s.io \"non-existent-cluster\" not found"))
 	})
 
 	It("should ignore when k8sinstallerconfig is paused", func() {
-
 		ph, err := patch.NewHelper(k8sinstallerConfig, k8sClientUncached)
 		Expect(err).ShouldNot(HaveOccurred())
 		pauseAnnotations := map[string]string{
@@ -172,7 +176,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 		_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      k8sinstallerConfig.Name,
-				Namespace: k8sinstallerConfig.Namespace}})
+				Namespace: k8sinstallerConfig.Namespace,
+			},
+		})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -180,12 +186,13 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      k8sinstallerConfig.Name,
-				Namespace: k8sinstallerConfig.Namespace}})
+				Namespace: k8sinstallerConfig.Namespace,
+			},
+		})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Context("When ByoMachine wait for InstallerSecret", func() {
-
 		BeforeEach(func() {
 			ph, err := patch.NewHelper(byoMachine, k8sClientUncached)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -208,7 +215,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      k8sinstallerConfig.Name,
-					Namespace: k8sinstallerConfig.Namespace}})
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			updatedConfig := &infrav1.K8sInstallerConfig{}
@@ -218,7 +227,6 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 		})
 
 		It("should ignore when K8sInstallerConfig status is ready", func() {
-
 			ph, err := patch.NewHelper(k8sinstallerConfig, k8sClientUncached)
 			Expect(err).ShouldNot(HaveOccurred())
 			k8sinstallerConfig.Status.Ready = true
@@ -230,7 +238,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      k8sinstallerConfig.Name,
-					Namespace: k8sinstallerConfig.Namespace}})
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -247,7 +257,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      k8sinstallerConfig.Name,
-					Namespace: k8sinstallerConfig.Namespace}})
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
 			Expect(err).Should(MatchError("No k8s support for OS"))
 		})
 
@@ -264,7 +276,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      k8sinstallerConfig.Name,
-					Namespace: k8sinstallerConfig.Namespace}})
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
 			Expect(err).Should(MatchError("No k8s support for OS"))
 		})
 
@@ -272,7 +286,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      k8sinstallerConfig.Name,
-					Namespace: k8sinstallerConfig.Namespace}})
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			createdSecret := &corev1.Secret{}
@@ -284,7 +300,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      k8sinstallerConfig.Name,
-					Namespace: k8sinstallerConfig.Namespace}})
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			createdSecret := &corev1.Secret{}
@@ -300,7 +318,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      k8sinstallerConfig.Name,
-					Namespace: k8sinstallerConfig.Namespace}})
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			updatedConfig := &infrav1.K8sInstallerConfig{}
@@ -316,7 +336,6 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 		})
 
 		It("should be add secret reference to K8sInstallerConfig even if secret already exists", func() {
-
 			createdSecret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      k8sinstallerConfig.Name,
@@ -343,7 +362,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      k8sinstallerConfig.Name,
-					Namespace: k8sinstallerConfig.Namespace}})
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			updatedConfig := &infrav1.K8sInstallerConfig{}
@@ -358,7 +379,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      k8sinstallerConfig.Name,
-					Namespace: k8sinstallerConfig.Namespace}})
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			updatedConfig := &infrav1.K8sInstallerConfig{}
@@ -373,7 +396,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 				_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 					NamespacedName: types.NamespacedName{
 						Name:      k8sinstallerConfig.Name,
-						Namespace: k8sinstallerConfig.Namespace}})
+						Namespace: k8sinstallerConfig.Namespace,
+					},
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(k8sClientUncached.Delete(ctx, k8sinstallerConfig)).Should(Succeed())
@@ -390,7 +415,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 				_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 					NamespacedName: types.NamespacedName{
 						Name:      k8sinstallerConfig.Name,
-						Namespace: k8sinstallerConfig.Namespace}})
+						Namespace: k8sinstallerConfig.Namespace,
+					},
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				// assert K8sInstallerConfig does not exists
@@ -420,7 +447,9 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 					_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
 						NamespacedName: types.NamespacedName{
 							Name:      k8sinstallerConfig.Name,
-							Namespace: k8sinstallerConfig.Namespace}})
+							Namespace: k8sinstallerConfig.Namespace,
+						},
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					// assert K8sInstallerConfig does not exists
@@ -432,12 +461,12 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 	})
 
 	Context("ByoMachine to K8sInstallerConfig reconcile request", func() {
-		It("should not return reconcile request if ByoMachine InstallerRef doesn't exists", func() {
-			result := k8sInstallerConfigReconciler.ByoMachineToK8sInstallerConfigMapFunc(byoMachine)
+		It("should not return reconcile request if ByoMachine InstallerRef doesn't exists", func(c SpecContext) {
+			result := k8sInstallerConfigReconciler.ByoMachineToK8sInstallerConfigMapFunc(c, byoMachine)
 			Expect(len(result)).To(BeZero())
 		})
 
-		It("should not return reconcile request if ByoMachine InstallerRef doesn't refer to K8sInstallerConfitTemplate", func() {
+		It("should not return reconcile request if ByoMachine InstallerRef doesn't refer to K8sInstallerConfitTemplate", func(c SpecContext) {
 			ph, err := patch.NewHelper(byoMachine, k8sClientUncached)
 			Expect(err).ShouldNot(HaveOccurred())
 			byoMachine.Spec.InstallerRef = &corev1.ObjectReference{
@@ -450,11 +479,11 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 				return object.(*infrav1.ByoMachine).Spec.InstallerRef != nil
 			})
 
-			result := k8sInstallerConfigReconciler.ByoMachineToK8sInstallerConfigMapFunc(byoMachine)
+			result := k8sInstallerConfigReconciler.ByoMachineToK8sInstallerConfigMapFunc(c, byoMachine)
 			Expect(len(result)).To(BeZero())
 		})
 
-		It("should return reconcile request if ByoMachine refer to K8sInstallerConfigTemplate installer", func() {
+		It("should return reconcile request if ByoMachine refer to K8sInstallerConfigTemplate installer", func(c SpecContext) {
 			ph, err := patch.NewHelper(byoMachine, k8sClientUncached)
 			Expect(err).ShouldNot(HaveOccurred())
 			byoMachine.Spec.InstallerRef = &corev1.ObjectReference{
@@ -468,9 +497,8 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 				return object.(*infrav1.ByoMachine).Spec.InstallerRef != nil
 			})
 
-			result := k8sInstallerConfigReconciler.ByoMachineToK8sInstallerConfigMapFunc(byoMachine)
+			result := k8sInstallerConfigReconciler.ByoMachineToK8sInstallerConfigMapFunc(c, byoMachine)
 			Expect(len(result)).NotTo(BeZero())
 		})
 	})
-
 })

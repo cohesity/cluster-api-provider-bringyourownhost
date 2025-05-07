@@ -12,9 +12,9 @@ import (
 	"runtime"
 	"strings"
 
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	"github.com/jackpal/gateway"
 	"github.com/pkg/errors"
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -23,10 +23,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	// LocalHostRegistrar is a HostRegistrar that registers the local host.
-	LocalHostRegistrar *HostRegistrar
-)
+// LocalHostRegistrar is a HostRegistrar that registers the local host.
+var LocalHostRegistrar *HostRegistrar
 
 // HostInfo contains information about the host network interface.
 type HostInfo struct {

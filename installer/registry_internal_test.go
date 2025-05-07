@@ -10,9 +10,7 @@ import (
 
 var _ = Describe("Byohost Installer Tests", func() {
 	Context("When registry is created", func() {
-		var (
-			r registry
-		)
+		var r registry
 
 		BeforeEach(func() {
 			r = newRegistry()
@@ -53,7 +51,6 @@ var _ = Describe("Byohost Installer Tests", func() {
 			Expect(osFilters).To(HaveLen(2))
 			Expect(osBundles).To(ContainElements("rhel", "ubuntu"))
 			Expect(osBundles).To(HaveLen(2))
-
 		})
 		It("Should decouple host os from bundle os", func() {
 			// Bundle OS does not match filter OS
@@ -104,7 +101,6 @@ var _ = Describe("Byohost Installer Tests", func() {
 	})
 
 	Context("When supported registry is fetched", func() {
-
 		r := GetSupportedRegistry()
 
 		It("Should match with the supported os and k8s versions", func() {
@@ -115,7 +111,7 @@ var _ = Describe("Byohost Installer Tests", func() {
 			Expect(osBundles).To(HaveLen(1))
 
 			osBundleResult := r.ListK8s("Ubuntu_20.04.1_x86-64")
-			Expect(osBundleResult).To(ContainElements("v1.24.*", "v1.25.*", "v1.26.*"))
+			Expect(osBundleResult).To(ContainElements("v1.25.*", "v1.26.*", "v1.27.*"))
 			Expect(osBundleResult).To(HaveLen(3))
 		})
 	})

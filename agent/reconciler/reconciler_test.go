@@ -8,13 +8,13 @@ import (
 	"errors"
 	"fmt"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit/cloudinitfakes"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/reconciler"
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	eventutils "github.com/cohesity/cluster-api-provider-bringyourownhost/test/utils/events"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -26,7 +26,6 @@ import (
 )
 
 var _ = Describe("Byohost Agent Tests", func() {
-
 	var (
 		ctx                = context.TODO()
 		ns                 = "default"
@@ -59,7 +58,8 @@ var _ = Describe("Byohost Agent Tests", func() {
 		_, err := hostReconciler.Reconcile(ctx, controllerruntime.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      "non-existent-host",
-				Namespace: ns},
+				Namespace: ns,
+			},
 		})
 		Expect(err).To(MatchError("byohosts.infrastructure.cluster.x-k8s.io \"non-existent-host\" not found"))
 	})
@@ -269,7 +269,6 @@ runCmd:
 					})
 
 					It("should execute bootstrap secret only once ", func() {
-
 						_, reconcilerErr := hostReconciler.Reconcile(ctx, controllerruntime.Request{
 							NamespacedName: byoHostLookupKey,
 						})
@@ -285,7 +284,6 @@ runCmd:
 					})
 
 					It("should set K8sNodeBootstrapSucceeded to True if the boostrap execution succeeds", func() {
-
 						result, reconcilerErr := hostReconciler.Reconcile(ctx, controllerruntime.Request{
 							NamespacedName: byoHostLookupKey,
 						})
@@ -393,7 +391,6 @@ runCmd:
 						Expect(events).Should(ConsistOf([]string{
 							"Warning ReadInstallationSecretFailed install and uninstall script non-existent not found",
 						}))
-
 					})
 
 					It("should set uninstall script in byohost spec", func() {
@@ -520,7 +517,6 @@ runCmd:
 			})
 
 			It("should reset the node and set the Reason to K8sNodeAbsentReason", func() {
-
 				byoHost.Spec.UninstallationScript = &uninstallScript
 				Expect(patchHelper.Patch(ctx, byoHost, patch.WithStatusObservedGeneration{})).NotTo(HaveOccurred())
 
@@ -705,7 +701,6 @@ runCmd:
 				})
 				Expect(result).To(Equal(controllerruntime.Result{}))
 				Expect(reconcilerErr).ToNot(HaveOccurred())
-
 			})
 
 			AfterEach(func() {

@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	controllers "github.com/cohesity/cluster-api-provider-bringyourownhost/controllers/infrastructure"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -21,7 +21,6 @@ import (
 )
 
 var _ = Describe("Controllers/ByoclusterController", func() {
-
 	var (
 		k8sClientUncached client.Client
 		byoCluster        *infrastructurev1beta1.ByoCluster
@@ -40,7 +39,9 @@ var _ = Describe("Controllers/ByoclusterController", func() {
 		_, err := byoClusterReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      "non-existent-byocluster",
-				Namespace: "non-existent-namespace"}})
+				Namespace: "non-existent-namespace",
+			},
+		})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -52,7 +53,9 @@ var _ = Describe("Controllers/ByoclusterController", func() {
 		_, err := byoClusterReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      byoCluster.Name,
-				Namespace: byoCluster.Namespace}})
+				Namespace: byoCluster.Namespace,
+			},
+		})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -72,7 +75,9 @@ var _ = Describe("Controllers/ByoclusterController", func() {
 		_, err := byoClusterReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      byoCluster.Name,
-				Namespace: byoCluster.Namespace}})
+				Namespace: byoCluster.Namespace,
+			},
+		})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -90,7 +95,8 @@ var _ = Describe("Controllers/ByoclusterController", func() {
 
 		byoClusterLookupKey := types.NamespacedName{Name: byoCluster.Name, Namespace: byoCluster.Namespace}
 		_, err := byoClusterReconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: byoClusterLookupKey})
+			NamespacedName: byoClusterLookupKey,
+		})
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(k8sClientUncached.Delete(ctx, byoCluster)).Should(Succeed())
@@ -99,14 +105,14 @@ var _ = Describe("Controllers/ByoclusterController", func() {
 		})
 
 		_, err = byoClusterReconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: byoClusterLookupKey})
+			NamespacedName: byoClusterLookupKey,
+		})
 		Expect(err).NotTo(HaveOccurred())
 
 		// assert ByoCluster does not exists
 		deletedByoCluster := &infrastructurev1beta1.ByoCluster{}
 		err = k8sClientUncached.Get(ctx, byoClusterLookupKey, deletedByoCluster)
 		Expect(err).To(MatchError(fmt.Sprintf("byoclusters.infrastructure.cluster.x-k8s.io %q not found", byoClusterLookupKey.Name)))
-
 	})
 
 	It("should get valid value of fields when ByoClusterController gets a create request", func() {
@@ -123,7 +129,8 @@ var _ = Describe("Controllers/ByoclusterController", func() {
 
 		byoClusterLookupKey := types.NamespacedName{Name: byoCluster.Name, Namespace: byoCluster.Namespace}
 		_, err := byoClusterReconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: byoClusterLookupKey})
+			NamespacedName: byoClusterLookupKey,
+		})
 		Expect(err).NotTo(HaveOccurred())
 
 		createdByoCluster := &infrastructurev1beta1.ByoCluster{}
@@ -133,5 +140,4 @@ var _ = Describe("Controllers/ByoclusterController", func() {
 		Expect(createdByoCluster.Status.Ready).To(BeTrue())
 		Expect(createdByoCluster.Spec.ControlPlaneEndpoint.Port).To(Equal(int32(controllers.DefaultAPIEndpointPort)))
 	})
-
 })

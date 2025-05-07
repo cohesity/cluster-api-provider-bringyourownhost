@@ -22,7 +22,7 @@ var _ = Describe("ByohostWebhook/Unit", func() {
 	schema := runtime.NewScheme()
 	err := AddToScheme(schema)
 	Expect(err).NotTo(HaveOccurred())
-	decoder, _ := admission.NewDecoder(schema)
+	decoder := admission.NewDecoder(schema)
 	v := &ByoHostValidator{
 		decoder: decoder,
 	}

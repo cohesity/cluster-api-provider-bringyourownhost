@@ -14,9 +14,7 @@ import (
 
 var _ = Describe("Registration", func() {
 	Context("When generateCSR is called", func() {
-		var (
-			hostName = "test-host"
-		)
+		hostName := "test-host"
 		It("should return error if Private Key is not valid", func() {
 			certData, err := generateCSR(hostName, &rsa.PrivateKey{})
 			Expect(err).Should(HaveOccurred())
@@ -56,7 +54,7 @@ users:
 			Expect(err).ShouldNot(HaveOccurred())
 			filekubeconfig, err := os.CreateTemp(fileDir, "kubeconfig")
 			Expect(err).ShouldNot(HaveOccurred())
-			err = os.WriteFile(fileboot.Name(), testDatabootstrapValid, os.FileMode(0755))
+			err = os.WriteFile(fileboot.Name(), testDatabootstrapValid, os.FileMode(0o755))
 			Expect(err).ShouldNot(HaveOccurred())
 			restConfig, err := LoadRESTClientConfig(fileboot.Name())
 			Expect(err).ShouldNot(HaveOccurred())

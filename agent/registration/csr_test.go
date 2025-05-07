@@ -12,11 +12,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	certv1 "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,7 +71,7 @@ users:
   user:
     token: mytoken-a
 `)
-		var testCert = `
+		testCert := `
 -----BEGIN CERTIFICATE-----
 MIIBvzCCAWWgAwIBAgIRAMd7Mz3fPrLm1aFUn02lLHowCgYIKoZIzj0EAwIwIzEh
 MB8GA1UEAwwYazNzLWNsaWVudC1jYUAxNjE2NDMxOTU2MB4XDTIxMDQxOTIxNTMz
@@ -95,7 +95,6 @@ kovW9X7Ook/tTW0HyX6D6HRciA==
 			registration.ConfigPath = "config"
 			fileDir, err = os.MkdirTemp("", "bootstrap")
 			Expect(err).ShouldNot(HaveOccurred())
-
 		})
 
 		AfterEach(func() {
@@ -112,7 +111,7 @@ kovW9X7Ook/tTW0HyX6D6HRciA==
 		It("should return client config if bootstrap kubeconfig is valid", func() {
 			fileboot, err := os.CreateTemp(fileDir, "bootstrapkubeconfig")
 			Expect(err).ShouldNot(HaveOccurred())
-			err = os.WriteFile(fileboot.Name(), testDatabootstrapValid, os.FileMode(0755))
+			err = os.WriteFile(fileboot.Name(), testDatabootstrapValid, os.FileMode(0o755))
 			Expect(err).ShouldNot(HaveOccurred())
 			restConfig, err := registration.LoadRESTClientConfig(fileboot.Name())
 			Expect(err).ShouldNot(HaveOccurred())
@@ -122,7 +121,7 @@ kovW9X7Ook/tTW0HyX6D6HRciA==
 		It("should return error if bootstrap kubeconfig is invalid", func() {
 			fileboot, err := os.CreateTemp(fileDir, "bootstrapkubeconfig")
 			Expect(err).ShouldNot(HaveOccurred())
-			err = os.WriteFile(fileboot.Name(), testDatabootstrapInvalid, os.FileMode(0755))
+			err = os.WriteFile(fileboot.Name(), testDatabootstrapInvalid, os.FileMode(0o755))
 			Expect(err).ShouldNot(HaveOccurred())
 			restConfig, err := registration.LoadRESTClientConfig(fileboot.Name())
 			Expect(err).Should(HaveOccurred())

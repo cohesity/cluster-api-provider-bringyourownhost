@@ -16,10 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/pkg/errors"
 	infrav1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	"github.com/pkg/errors"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	clusterutilv1 "sigs.k8s.io/cluster-api/util"
@@ -128,8 +127,8 @@ func patchByoCluster(ctx context.Context, patchHelper *patch.Helper, byoCluster 
 func GetByoMachinesInCluster(
 	ctx context.Context,
 	controllerClient client.Client,
-	namespace, clusterName string) ([]*infrav1.ByoMachine, error) {
-
+	namespace, clusterName string,
+) ([]*infrav1.ByoMachine, error) {
 	labels := map[string]string{clusterv1.ClusterNameLabel: clusterName}
 	machineList := &infrav1.ByoMachineList{}
 
@@ -186,8 +185,7 @@ func (r *ByoClusterReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 		// Watch the controlled, infrastructure resource.
 		For(clusterControlledType).
 		// Watch the CAPI resource that owns this infrastructure resource.
-		Watches(
-			&source.Kind{Type: &clusterv1.Cluster{}},
+		Watches(&clusterv1.Cluster{},
 			handler.EnqueueRequestsFromMapFunc(clusterutilv1.ClusterToInfrastructureMapFunc(ctx, infrav1.GroupVersion.WithKind(clusterControlledTypeGVK.Kind), mgr.GetClient(), &infrav1.ByoCluster{})),
 		).
 		Complete(r)

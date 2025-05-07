@@ -23,7 +23,6 @@ import (
 )
 
 var _ = Describe("When testing MachineDeployment scale out/in", func() {
-
 	var (
 		ctx                    context.Context
 		specName               = "md-scale"
@@ -38,14 +37,13 @@ var _ = Describe("When testing MachineDeployment scale out/in", func() {
 	)
 
 	BeforeEach(func() {
-
 		ctx = context.TODO()
 		Expect(ctx).NotTo(BeNil(), "ctx is required for %s spec", specName)
 
 		Expect(e2eConfig).NotTo(BeNil(), "Invalid argument. e2eConfig can't be nil when calling %s spec", specName)
 		Expect(clusterctlConfigPath).To(BeAnExistingFile(), "Invalid argument. clusterctlConfigPath must be an existing file when calling %s spec", specName)
 		Expect(bootstrapClusterProxy).NotTo(BeNil(), "Invalid argument. bootstrapClusterProxy can't be nil when calling %s spec", specName)
-		Expect(os.MkdirAll(artifactFolder, 0755)).To(Succeed(), "Invalid argument. artifactFolder can't be created for %s spec", specName)
+		Expect(os.MkdirAll(artifactFolder, 0o755)).To(Succeed(), "Invalid argument. artifactFolder can't be created for %s spec", specName)
 		Expect(e2eConfig.Variables).To(HaveKey(KubernetesVersion))
 
 		// set up a Namespace where to host objects for this spec and create a watcher for the namespace events.
@@ -146,7 +144,6 @@ var _ = Describe("When testing MachineDeployment scale out/in", func() {
 		})
 
 		Expect(clusterResources.MachineDeployments[0].Spec.Replicas).To(Equal(pointer.Int32(2)))
-
 	})
 
 	JustAfterEach(func() {
@@ -167,7 +164,6 @@ var _ = Describe("When testing MachineDeployment scale out/in", func() {
 				err = dockerClient.ContainerRemove(ctx, byohostContainerID, types.ContainerRemoveOptions{})
 				Expect(err).NotTo(HaveOccurred())
 			}
-
 		}
 
 		for _, agentLogFile := range allAgentLogFiles {

@@ -24,7 +24,6 @@ import (
 // creating a workload cluster
 // This test is meant to provide a first, fast signal to detect regression; it is recommended to use it as a PR blocker test.
 var _ = Describe("When BYOH joins existing cluster [Installer]", func() {
-
 	var (
 		ctx                 context.Context
 		specName            = "quick-start"
@@ -42,14 +41,13 @@ var _ = Describe("When BYOH joins existing cluster [Installer]", func() {
 	)
 
 	BeforeEach(func() {
-
 		ctx = context.TODO()
 		Expect(ctx).NotTo(BeNil(), "ctx is required for %s spec", specName)
 
 		Expect(e2eConfig).NotTo(BeNil(), "Invalid argument. e2eConfig can't be nil when calling %s spec", specName)
 		Expect(clusterctlConfigPath).To(BeAnExistingFile(), "Invalid argument. clusterctlConfigPath must be an existing file when calling %s spec", specName)
 		Expect(bootstrapClusterProxy).NotTo(BeNil(), "Invalid argument. bootstrapClusterProxy can't be nil when calling %s spec", specName)
-		Expect(os.MkdirAll(artifactFolder, 0755)).To(Succeed(), "Invalid argument. artifactFolder can't be created for %s spec", specName)
+		Expect(os.MkdirAll(artifactFolder, 0o755)).To(Succeed(), "Invalid argument. artifactFolder can't be created for %s spec", specName)
 
 		Expect(e2eConfig.Variables).To(HaveKey(KubernetesVersion))
 
@@ -134,7 +132,6 @@ var _ = Describe("When BYOH joins existing cluster [Installer]", func() {
 			WaitForControlPlaneIntervals: e2eConfig.GetIntervals(specName, "wait-control-plane"),
 			WaitForMachineDeployments:    e2eConfig.GetIntervals(specName, "wait-worker-nodes"),
 		}, clusterResources)
-
 	})
 
 	JustAfterEach(func() {

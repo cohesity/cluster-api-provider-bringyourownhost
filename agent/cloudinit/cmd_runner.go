@@ -16,8 +16,7 @@ type ICmdRunner interface {
 
 // CmdRunner default implementer of ICmdRunner
 // TODO reevaluate empty interface/struct
-type CmdRunner struct {
-}
+type CmdRunner struct{}
 
 // RunCmd executes the command string
 func (r CmdRunner) RunCmd(ctx context.Context, cmd string) error {

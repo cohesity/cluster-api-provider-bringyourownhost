@@ -167,7 +167,6 @@ var _ = BeforeSuite(func() {
 		}
 		return conn.Close()
 	}).Should(Succeed())
-
 })
 
 var _ = AfterSuite(func() {

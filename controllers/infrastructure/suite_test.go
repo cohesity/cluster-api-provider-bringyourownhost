@@ -162,7 +162,6 @@ var _ = BeforeSuite(func() {
 	}()
 
 	Expect(k8sManager.GetCache().WaitForCacheSync(context.TODO())).To(BeTrue())
-
 })
 
 var _ = AfterSuite(func() {

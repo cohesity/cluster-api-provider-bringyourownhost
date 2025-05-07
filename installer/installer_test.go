@@ -6,10 +6,10 @@ package installer_test
 import (
 	"context"
 
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/installer"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/installer"
 )
 
 var _ = Describe("Byohost Installer Tests", func() {

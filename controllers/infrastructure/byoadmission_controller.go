@@ -97,6 +97,7 @@ func (r *ByoAdmissionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			},
 			UpdateFunc: func(e event.UpdateEvent) bool {
 				return strings.HasPrefix(e.ObjectOld.GetName(), "byoh-csr-")
-			}}).
+			},
+		}).
 		Complete(r)
 }

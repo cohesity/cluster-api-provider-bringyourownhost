@@ -14,14 +14,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-logr/logr"
-	pflag "github.com/spf13/pflag"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/reconciler"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version"
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/feature"
+	"github.com/go-logr/logr"
+	pflag "github.com/spf13/pflag"
 	certv1 "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -38,7 +38,8 @@ import (
 // labelFlags is a flag that holds a map of label key values.
 // One or more key value pairs can be passed using the same flag
 // The following example sets labelFlags with two items:
-//     -label "key1=value1" -label "key2=value2"
+//
+//	-label "key1=value1" -label "key2=value2"
 type labelFlags map[string]string
 
 // String implements flag.Value interface
@@ -51,7 +52,7 @@ func (l *labelFlags) String() string {
 }
 
 // Set implements flag.Value interface
-//nolint: gomnd
+// nolint: gomnd
 func (l *labelFlags) Set(value string) error {
 	// account for comma-separated key-value pairs in a single invocation
 	if len(strings.Split(value, ",")) > 1 {
@@ -96,8 +97,10 @@ func setupflags() {
 	flag.StringVar(&bootstrapKubeConfig, "bootstrap-kubeconfig", "", "Provide bootstrap kubeconfig for bootstrap token workflow")
 
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	hiddenFlags := []string{"log-flush-frequency", "alsologtostderr", "log-backtrace-at", "log-dir", "logtostderr", "stderrthreshold", "vmodule", "azure-container-registry-config",
-		"log_backtrace_at", "log_dir", "log_file", "log_file_max_size", "add_dir_header", "skip_headers", "skip_log_headers", "one_output", "kubeconfig"}
+	hiddenFlags := []string{
+		"log-flush-frequency", "alsologtostderr", "log-backtrace-at", "log-dir", "logtostderr", "stderrthreshold", "vmodule", "azure-container-registry-config",
+		"log_backtrace_at", "log_dir", "log_file", "log_file_max_size", "add_dir_header", "skip_headers", "skip_log_headers", "one_output", "kubeconfig",
+	}
 	for _, hiddenFlag := range hiddenFlags {
 		_ = pflag.CommandLine.MarkHidden(hiddenFlag)
 	}
@@ -189,14 +192,15 @@ func main() {
 		Namespace: namespace,
 		// this enables filtered watch of ByoHost based on the host name
 		// only ByoHost running for this host will be cached
-		NewCache: cache.BuilderWithOptions(cache.Options{
-			SelectorsByObject: cache.SelectorsByObject{
+		NewCache: func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
+			opts.ByObject = map[client.Object]cache.ByObject{
 				&infrastructurev1beta1.ByoHost{}: {
 					Field: fields.SelectorFromSet(fields.Set{"metadata.name": hostName}),
 				},
-			},
+			}
+
+			return cache.New(config, opts)
 		},
-		),
 		MetricsBindAddress: metricsbindaddress,
 	})
 	if err != nil {
@@ -244,7 +248,7 @@ func handleBootstrapFlow(logger logr.Logger, hostName string) error {
 }
 
 func certificateRotation(logger logr.Logger, hostName string, config *rest.Config) error {
-	var pollDuration = 5 * time.Second
+	pollDuration := 5 * time.Second
 	for {
 		if err := certRotation(logger, hostName, config); err != nil {
 			return err
@@ -277,7 +281,7 @@ func certRotation(logger logr.Logger, hostName string, config *rest.Config) erro
 			logger.Error(err, "bootstrap flow failed")
 		}
 	} else {
-		logger.Info("certificate are valid", "will be renewed after", cert.NotAfter.Add(totalTimeCert/-5))
+		logger.V(1).Info("certificate are valid", "will be renewed after", cert.NotAfter.Add(totalTimeCert/-5))
 	}
 	return nil
 }

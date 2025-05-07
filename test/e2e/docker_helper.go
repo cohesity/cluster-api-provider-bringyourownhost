@@ -163,10 +163,12 @@ func (r *ByoHostRunner) createDockerContainer() (container.CreateResponse, error
 	tmpfs := map[string]string{"/run": "", "/tmp": ""}
 
 	return r.DockerClient.ContainerCreate(r.Context,
-		&container.Config{Hostname: r.ByoHostName,
-			Image: kindImage,
+		&container.Config{
+			Hostname: r.ByoHostName,
+			Image:    kindImage,
 		},
-		&container.HostConfig{Privileged: true,
+		&container.HostConfig{
+			Privileged:  true,
 			SecurityOpt: []string{"seccomp=unconfined"},
 			Tmpfs:       tmpfs,
 			NetworkMode: container.NetworkMode(r.NetworkInterface),
@@ -189,7 +191,7 @@ func (r *ByoHostRunner) copyKubeconfig(config cpConfig, listopt types.ContainerL
 
 		re := regexp.MustCompile("server:.*")
 		kubeconfig = re.ReplaceAll(kubeconfig, []byte("server: https://127.0.0.1:"+r.Port))
-		Expect(os.WriteFile(TempKubeconfigPath, kubeconfig, 0644)).NotTo(HaveOccurred()) //nolint: gosec,gomnd
+		Expect(os.WriteFile(TempKubeconfigPath, kubeconfig, 0o644)).NotTo(HaveOccurred()) //nolint: gosec,gomnd
 
 		// If the --bootstrap-kubeconfig is not provided, the tests will use
 		// kubeconfig placed in ~/.byoh/config

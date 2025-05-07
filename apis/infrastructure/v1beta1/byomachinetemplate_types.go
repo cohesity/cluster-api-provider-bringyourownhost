@@ -16,8 +16,7 @@ type ByoMachineTemplateSpec struct {
 }
 
 // ByoMachineTemplateStatus defines the observed state of ByoMachineTemplate
-type ByoMachineTemplateStatus struct {
-}
+type ByoMachineTemplateStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

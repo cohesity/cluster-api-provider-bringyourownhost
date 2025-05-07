@@ -23,7 +23,6 @@ import (
 )
 
 var _ = Describe("Clusterclass upgrade test [K8s-upgrade]", func() {
-
 	var (
 		ctx                          context.Context
 		specName                     = "upgrade"
@@ -36,7 +35,7 @@ var _ = Describe("Clusterclass upgrade test [K8s-upgrade]", func() {
 		allbyohostContainerIDs       []string
 		allAgentLogFiles             []string
 		kubernetesVersionUpgradeFrom = "v1.25.11"
-		kubernetesVersionUpgradeTo   = "v1.26.6"
+		kubernetesVersionUpgradeTo   = "v1.27.16"
 		etcdUpgradeVersion           = "3.5.6-0"
 		coreDNSUpgradeVersion        = "v1.9.3"
 	)
@@ -48,7 +47,7 @@ var _ = Describe("Clusterclass upgrade test [K8s-upgrade]", func() {
 		Expect(e2eConfig).NotTo(BeNil(), "Invalid argument. e2eConfig can't be nil when calling %s spec", specName)
 		Expect(clusterctlConfigPath).To(BeAnExistingFile(), "Invalid argument. clusterctlConfigPath must be an existing file when calling %s spec", specName)
 		Expect(bootstrapClusterProxy).NotTo(BeNil(), "Invalid argument. bootstrapClusterProxy can't be nil when calling %s spec", specName)
-		Expect(os.MkdirAll(artifactFolder, 0755)).To(Succeed(), "Invalid argument. artifactFolder can't be created for %s spec", specName)
+		Expect(os.MkdirAll(artifactFolder, 0o755)).To(Succeed(), "Invalid argument. artifactFolder can't be created for %s spec", specName)
 		Expect(e2eConfig.Variables).To(HaveKey(KubernetesVersion))
 
 		// set up a Namespace where to host objects for this spec and create a watcher for the namespace events.
@@ -167,7 +166,6 @@ var _ = Describe("Clusterclass upgrade test [K8s-upgrade]", func() {
 				err = dockerClient.ContainerRemove(ctx, byohostContainerID, types.ContainerRemoveOptions{})
 				Expect(err).NotTo(HaveOccurred())
 			}
-
 		}
 
 		for _, agentLogFile := range allAgentLogFiles {

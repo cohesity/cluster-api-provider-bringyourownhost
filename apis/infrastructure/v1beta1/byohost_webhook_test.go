@@ -6,9 +6,9 @@ package v1beta1_test
 import (
 	"context"
 
+	byohv1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	byohv1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,11 +18,8 @@ import (
 )
 
 var _ = Describe("ByohostWebhook", func() {
-
 	Context("When ByoHost gets a delete request", func() {
-		var (
-			byoHost *byohv1beta1.ByoHost
-		)
+		var byoHost *byohv1beta1.ByoHost
 		BeforeEach(func() {
 			ctx = context.Background()
 			byoHost = &byohv1beta1.ByoHost{
@@ -95,9 +92,7 @@ var _ = Describe("ByohostWebhook", func() {
 		})
 	})
 	Context("When ByoHost gets a create request", func() {
-		var (
-			byoHost *byohv1beta1.ByoHost
-		)
+		var byoHost *byohv1beta1.ByoHost
 		BeforeEach(func() {
 			ctx = context.Background()
 			byoHost = &byohv1beta1.ByoHost{
@@ -126,9 +121,7 @@ var _ = Describe("ByohostWebhook", func() {
 		})
 	})
 	Context("When ByoHost gets a update request", func() {
-		var (
-			byoHost *byohv1beta1.ByoHost
-		)
+		var byoHost *byohv1beta1.ByoHost
 		BeforeEach(func() {
 			ctx = context.Background()
 			byoHost = &byohv1beta1.ByoHost{

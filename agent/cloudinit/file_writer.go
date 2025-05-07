@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	filePermission = 0644
-	dirPermission  = 0744
+	filePermission = 0o644
+	dirPermission  = 0o744
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -28,8 +28,7 @@ type IFileWriter interface {
 }
 
 // FileWriter default implementation of IFileWriter
-type FileWriter struct {
-}
+type FileWriter struct{}
 
 // MkdirIfNotExists creates the directory if it does not exist already
 func (w FileWriter) MkdirIfNotExists(dirName string) error {

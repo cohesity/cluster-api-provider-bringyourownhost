@@ -15,7 +15,7 @@ import (
 
 const (
 	// DefaultFileMode the default file mode of files created for tests
-	DefaultFileMode fs.FileMode = 0777
+	DefaultFileMode fs.FileMode = 0o777
 	// ReadByohControllerManagerLogShellFile location of script to read the controller manager log
 	ReadByohControllerManagerLogShellFile string = "/tmp/read-byoh-controller-manager-log.sh"
 	// ReadAllPodsShellFile location of script to read all pods logs

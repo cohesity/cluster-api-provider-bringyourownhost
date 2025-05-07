@@ -13,8 +13,7 @@ type K8sInstallerConfigTemplateSpec struct {
 }
 
 // K8sInstallerConfigTemplateStatus defines the observed state of K8sInstallerConfigTemplate
-type K8sInstallerConfigTemplateStatus struct {
-}
+type K8sInstallerConfigTemplateStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

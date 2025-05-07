@@ -8,9 +8,9 @@ import (
 
 	b64 "encoding/base64"
 
+	infrav1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	infrav1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -36,7 +36,9 @@ var _ = Describe("Controllers/BoottrapKubeconfigController", func() {
 		_, err := bootstrapKubeconfigReconciler.Reconcile(ctx, reconcile.Request{
 			NamespacedName: types.NamespacedName{
 				Name:      "non-existent-bootstrap-kubeconfig",
-				Namespace: "non-existent-namespace"}})
+				Namespace: "non-existent-namespace",
+			},
+		})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -68,14 +70,16 @@ var _ = Describe("Controllers/BoottrapKubeconfigController", func() {
 			Expect(helper.Patch(ctx, bootstrapKubeConfig)).NotTo(HaveOccurred())
 
 			res, err := bootstrapKubeconfigReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: bootstrapKubeconfigLookupKey})
+				NamespacedName: bootstrapKubeconfigLookupKey,
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(res).To(Equal(ctrl.Result{}))
 		})
 
 		It("should generate the bootstrap kubeconfig data", func() {
 			_, err := bootstrapKubeconfigReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: bootstrapKubeconfigLookupKey})
+				NamespacedName: bootstrapKubeconfigLookupKey,
+			})
 			Expect(err).NotTo(HaveOccurred())
 
 			createdBootstrapKubeconfig := &infrav1.BootstrapKubeconfig{}
@@ -93,7 +97,6 @@ var _ = Describe("Controllers/BoottrapKubeconfigController", func() {
 
 			caDataFromStatus := bootstrapKubeconfigFileData.Clusters[infrav1.DefaultClusterName].CertificateAuthorityData
 			Expect(string(caDataFromStatus)).To(Equal(testCAData))
-
 		})
 
 		AfterEach(func() {

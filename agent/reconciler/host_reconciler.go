@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pkg/errors"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/common"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -23,8 +23,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/kube-vip/kube-vip/pkg/vip"
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	"github.com/kube-vip/kube-vip/pkg/vip"
 )
 
 // HostReconciler encapsulates the data/logic needed to reconcile a ByoHost
@@ -314,7 +314,8 @@ func (r *HostReconciler) bootstrapK8sNode(ctx context.Context, bootstrapScript s
 	return cloudinit.ScriptExecutor{
 		WriteFilesExecutor:    r.FileWriter,
 		RunCmdExecutor:        r.CmdRunner,
-		ParseTemplateExecutor: r.TemplateParser}.Execute(bootstrapScript)
+		ParseTemplateExecutor: r.TemplateParser,
+	}.Execute(bootstrapScript)
 }
 
 func (r *HostReconciler) removeSentinelFile(ctx context.Context, byoHost *infrastructurev1beta1.ByoHost) error {

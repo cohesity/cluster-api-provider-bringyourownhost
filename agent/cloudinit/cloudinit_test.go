@@ -10,10 +10,10 @@ import (
 	"os"
 	"path"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit/cloudinitfakes"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Cloudinit", func() {
@@ -99,7 +99,6 @@ runCmd:
 			Expect(secondFile.Content).To(Equal(fileContent2))
 			Expect(secondFile.Permissions).To(Equal(permissions))
 			Expect(secondFile.Append).To(BeTrue())
-
 		})
 
 		It("should error out when an invalid yaml is passed", func() {
@@ -117,7 +116,6 @@ runCmd:
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("not enough permissions"))
 			Expect(fakeFileWriter.WriteToFileCallCount()).To(Equal(0))
-
 		})
 
 		It("should error out write to file failes", func() {
@@ -139,7 +137,6 @@ runCmd:
 		})
 
 		It("should not invoke the runCmd or writeFiles directive when absent", func() {
-
 			err := scriptExecutor.Execute("")
 			Expect(err).NotTo(HaveOccurred())
 

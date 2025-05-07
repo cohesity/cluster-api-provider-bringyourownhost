@@ -15,21 +15,19 @@ import (
 
 var _ = Describe("Help flag for host agent", func() {
 	Context("When the help flag is provided", func() {
-		var (
-			expectedOptions = []string{
-				"--bootstrap-kubeconfig string",
-				"--certExpiryDuration int",
-				"--downloadpath string",
-				"--kubeconfig string",
-				"--label labelFlags",
-				"--metricsbindaddress string",
-				"--namespace string",
-				"--skip-installation",
-				"--version",
-				"-v, --v",
-				"--feature-gates mapStringBool",
-			}
-		)
+		expectedOptions := []string{
+			"--bootstrap-kubeconfig string",
+			"--certExpiryDuration int",
+			"--downloadpath string",
+			"--kubeconfig string",
+			"--label labelFlags",
+			"--metricsbindaddress string",
+			"--namespace string",
+			"--skip-installation",
+			"--version",
+			"-v, --v",
+			"--feature-gates mapStringBool",
+		}
 
 		It("should output the expected option", func() {
 			command := exec.Command(pathToHostAgentBinary, "--help")
@@ -48,8 +46,6 @@ var _ = Describe("Help flag for host agent", func() {
 				// Any option not belongs to expectedOptions is not allowed.
 				Expect(strings.TrimSpace(line)).To(BeElementOf(expectedOptions))
 			}
-
 		})
-
 	})
 })

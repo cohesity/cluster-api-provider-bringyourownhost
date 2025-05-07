@@ -7,17 +7,16 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	byohv1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/cluster-api/util/patch"
 )
 
 var _ = Describe("BootstrapKubeconfig Webhook", func() {
-
 	var (
 		bootstrapKubeconfig         *byohv1beta1.BootstrapKubeconfig
 		err                         error
@@ -34,7 +33,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 		testPEMDataInvalid          = b64.StdEncoding.EncodeToString([]byte(testCADataInvalid))
 	)
 	Context("When BootstrapKubeconfig gets a create request", func() {
-
 		It("should reject the request if APIServer is not a valid URL", func() {
 			bootstrapKubeconfig = builder.BootstrapKubeconfig(defaultNamespace, testBootstrapKubeconfigName).
 				WithServer(testServerInvalidURL).
@@ -51,7 +49,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 			err = k8sClient.Create(ctx, bootstrapKubeconfig)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("admission webhook \"vbootstrapkubeconfig.kb.io\" denied the request: spec.apiserver: Invalid value: \"\": APIServer field cannot be empty"))
-
 		})
 
 		It("should reject the request if APIServer address does not have https scheme specified", func() {
@@ -89,7 +86,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 			err = k8sClient.Create(ctx, bootstrapKubeconfig)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("admission webhook \"vbootstrapkubeconfig.kb.io\" denied the request: spec.caData: Invalid value: \"\": CertificateAuthorityData field cannot be empty"))
-
 		})
 
 		It("should reject request if CertificateAuthorityData cannot be base64 decoded", func() {
@@ -100,7 +96,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 			err = k8sClient.Create(ctx, bootstrapKubeconfig)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fmt.Sprintf("admission webhook \"vbootstrapkubeconfig.kb.io\" denied the request: spec.caData: Invalid value: %q: cannot base64 decode CertificateAuthorityData", testCADataInvalid)))
-
 		})
 
 		It("should reject request if CertificateAuthorityData is not PEM encoded", func() {
@@ -111,7 +106,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 			err = k8sClient.Create(ctx, bootstrapKubeconfig)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fmt.Sprintf("admission webhook \"vbootstrapkubeconfig.kb.io\" denied the request: spec.caData: Invalid value: %q: CertificateAuthorityData is not PEM encoded", testPEMDataInvalid)))
-
 		})
 
 		It("should accept the request if all fields are valid", func() {
@@ -168,7 +162,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 			err = ph.Patch(ctx, createdBootstrapKubeconfig)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("admission webhook \"vbootstrapkubeconfig.kb.io\" denied the request: spec.apiserver: Invalid value: \"\": APIServer field cannot be empty"))
-
 		})
 
 		It("should reject the request if APIServer is not of the correct format", func() {
@@ -183,7 +176,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 			err = ph.Patch(ctx, createdBootstrapKubeconfig)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("admission webhook \"vbootstrapkubeconfig.kb.io\" denied the request: spec.caData: Invalid value: \"\": CertificateAuthorityData field cannot be empty"))
-
 		})
 
 		It("should reject request if CertificateAuthorityData cannot be base64 decoded", func() {
@@ -191,7 +183,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 			err = ph.Patch(ctx, createdBootstrapKubeconfig)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fmt.Sprintf("admission webhook \"vbootstrapkubeconfig.kb.io\" denied the request: spec.caData: Invalid value: %q: cannot base64 decode CertificateAuthorityData", testCADataInvalid)))
-
 		})
 
 		It("should reject request if CertificateAuthorityData is not PEM encoded", func() {
@@ -199,7 +190,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 			err = ph.Patch(ctx, createdBootstrapKubeconfig)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(fmt.Sprintf("admission webhook \"vbootstrapkubeconfig.kb.io\" denied the request: spec.caData: Invalid value: %q: CertificateAuthorityData is not PEM encoded", testPEMDataInvalid)))
-
 		})
 
 		It("should accept the request if all fields are valid", func() {
@@ -235,7 +225,6 @@ var _ = Describe("BootstrapKubeconfig Webhook", func() {
 				}
 				return nil
 			}).Should(BeNil())
-
 		})
 
 		It("should delete the BootstrapKubeconfig instance", func() {

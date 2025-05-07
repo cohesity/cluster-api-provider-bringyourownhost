@@ -14,6 +14,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/e2e"
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -21,11 +26,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version"
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/e2e"
 	certv1 "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +37,6 @@ import (
 )
 
 var _ = Describe("Agent", func() {
-
 	Context("When the host is unable to register with the API server", func() {
 		var (
 			ns               *corev1.Namespace
@@ -59,7 +58,6 @@ var _ = Describe("Agent", func() {
 
 			byoHostContainer, err = runner.SetupByoDockerHost()
 			Expect(err).NotTo(HaveOccurred())
-
 		})
 
 		AfterEach(func() {
@@ -109,7 +107,6 @@ var _ = Describe("Agent", func() {
 	})
 
 	Context("When the host agent is able to connect to API Server", func() {
-
 		var (
 			ns               *corev1.Namespace
 			ctx              context.Context
@@ -145,7 +142,6 @@ var _ = Describe("Agent", func() {
 					if strings.Contains(proc[len(containerTop.Titles)-1], "agent") {
 						return true
 					}
-
 				}
 				return false
 			}, 60).Should(BeTrue())
@@ -240,7 +236,6 @@ var _ = Describe("Agent", func() {
 				}
 				return false
 			}).Should(BeTrue())
-
 		})
 
 		It("should only reconcile ByoHost resource that the agent created", func() {
@@ -344,9 +339,7 @@ var _ = Describe("Agent", func() {
 	})
 
 	Context("When host agent is executed with --version flag", func() {
-		var (
-			tmpHostAgentBinary string
-		)
+		var tmpHostAgentBinary string
 		BeforeEach(func() {
 			date, err := exec.Command("date").Output()
 			Expect(err).NotTo(HaveOccurred())
@@ -447,7 +440,6 @@ var _ = Describe("Agent", func() {
 
 			gitVersionExpected := "GitVersion:\"" + gitVersion
 			Expect(out).Should(ContainSubstring(gitVersionExpected))
-
 		})
 	})
 
@@ -473,7 +465,6 @@ var _ = Describe("Agent", func() {
 
 			byoHostContainer, err = runner.SetupByoDockerHost()
 			Expect(err).NotTo(HaveOccurred())
-
 		})
 
 		AfterEach(func() {
@@ -508,7 +499,6 @@ var _ = Describe("Agent", func() {
 	})
 
 	Context("When the host agent is executed with --bootstrap-kubeconfig", func() {
-
 		var (
 			ns               *corev1.Namespace
 			ctx              context.Context
@@ -757,7 +747,7 @@ var _ = Describe("Agent", func() {
 			// Issue Certificate
 			byohCSR, err := clientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, fmt.Sprintf(registration.ByohCSRNameFormat, hostName), metav1.GetOptions{})
 			Expect(err).ShouldNot(HaveOccurred())
-			var FakeCert = `
+			FakeCert := `
 -----BEGIN CERTIFICATE-----
 MIIBvzCCAWWgAwIBAgIRAMd7Mz3fPrLm1aFUn02lLHowCgYIKoZIzj0EAwIwIzEh
 MB8GA1UEAwwYazNzLWNsaWVudC1jYUAxNjE2NDMxOTU2MB4XDTIxMDQxOTIxNTMz

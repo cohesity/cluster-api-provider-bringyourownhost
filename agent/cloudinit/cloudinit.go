@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/common"
+	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 )
 
@@ -38,9 +38,9 @@ type Files struct {
 }
 
 // Execute performs the following operations on the bootstrap script
-//  - parse the script to get the cloudinit data
-//  - execute the write_files directive
-//  - execute the run_cmd directive
+//   - parse the script to get the cloudinit data
+//   - execute the write_files directive
+//   - execute the run_cmd directive
 func (se ScriptExecutor) Execute(bootstrapScript string) error {
 	cloudInitData := bootstrapConfig{}
 	if err := yaml.Unmarshal([]byte(bootstrapScript), &cloudInitData); err != nil {

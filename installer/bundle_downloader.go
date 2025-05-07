@@ -12,10 +12,8 @@ import (
 	"github.com/go-logr/logr"
 )
 
-var (
-	// DownloadPathPermissions file mode permissions for download path
-	DownloadPathPermissions fs.FileMode = 0777
-)
+// DownloadPathPermissions file mode permissions for download path
+var DownloadPathPermissions fs.FileMode = 0o777
 
 // bundleDownloader for downloading an OCI image.
 type bundleDownloader struct {

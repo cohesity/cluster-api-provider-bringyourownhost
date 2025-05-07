@@ -9,13 +9,12 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
 )
 
 var _ = Describe("FileWriter", func() {
-
 	var (
 		workDir string
 		err     error
@@ -45,7 +44,7 @@ var _ = Describe("FileWriter", func() {
 	})
 
 	It("Should create and write to file", func() {
-		filePermission := 0777
+		filePermission := 0o777
 		file := cloudinit.Files{
 			Path:        path.Join(workDir, "file1.txt"),
 			Encoding:    "",
@@ -68,7 +67,6 @@ var _ = Describe("FileWriter", func() {
 		stats, err := os.Stat(file.Path)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(stats.Mode()).To(Equal(fs.FileMode(filePermission)))
-
 	})
 
 	It("Should append content to file when append mode is enabled", func() {
@@ -85,7 +83,7 @@ var _ = Describe("FileWriter", func() {
 		err := cloudinit.FileWriter{}.MkdirIfNotExists(workDir)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = os.WriteFile(file.Path, []byte(fileOriginContent), 0644)
+		err = os.WriteFile(file.Path, []byte(fileOriginContent), 0o644)
 		Expect(err).NotTo(HaveOccurred())
 
 		err = cloudinit.FileWriter{}.WriteToFile(&file)
@@ -94,7 +92,6 @@ var _ = Describe("FileWriter", func() {
 		buffer, err := os.ReadFile(file.Path)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(buffer)).To(Equal(fileOriginContent + file.Content))
-
 	})
 
 	It("should return error with invalid owner format", func() {
