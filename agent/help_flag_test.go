@@ -22,6 +22,8 @@ var _ = Describe("Help flag for host agent", func() {
 			"--kubeconfig string",
 			"--label labelFlags",
 			"--metricsbindaddress string",
+			"--metrics-secure",
+			"--enable-http2",
 			"--namespace string",
 			"--skip-installation",
 			"--version",
