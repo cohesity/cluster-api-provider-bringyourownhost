@@ -155,6 +155,7 @@ func main() {
 		logger.Error(err, "could not determine hostname")
 		return
 	}
+	hostName = strings.ToLower(hostName)
 
 	_, err = os.Stat(registration.GetBYOHConfigPath())
 	// Enable bootstrap flow if --bootstrap-kubeconfig is provided
