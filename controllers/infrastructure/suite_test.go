@@ -68,9 +68,7 @@ var (
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{})
+	RunSpecs(t, "Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -126,8 +124,12 @@ var _ = BeforeSuite(func() {
 
 	recorder = record.NewFakeRecorder(32)
 	reconciler = &controllers.ByoMachineReconciler{
-		Client:   k8sManager.GetClient(),
-		Tracker:  remote.NewTestClusterCacheTracker(logr.New(logf.NullLogSink{}), clientFake, scheme.Scheme, client.ObjectKey{Name: capiCluster.Name, Namespace: capiCluster.Namespace}),
+		Client: k8sManager.GetClient(),
+		Tracker: remote.NewTestClusterCacheTracker(logr.New(logf.NullLogSink{}),
+			clientFake, clientFake, scheme.Scheme,
+			client.ObjectKey{
+				Name: capiCluster.Name, Namespace: capiCluster.Namespace,
+			}),
 		Recorder: recorder,
 	}
 	err = reconciler.SetupWithManager(context.TODO(), k8sManager)

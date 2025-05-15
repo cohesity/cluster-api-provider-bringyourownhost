@@ -34,8 +34,8 @@ var _ = Describe("Clusterclass upgrade test [K8s-upgrade]", func() {
 		dockerClient                 *client.Client
 		allbyohostContainerIDs       []string
 		allAgentLogFiles             []string
-		kubernetesVersionUpgradeFrom = "v1.25.11"
-		kubernetesVersionUpgradeTo   = "v1.27.16"
+		kubernetesVersionUpgradeFrom = "v1.27.16"
+		kubernetesVersionUpgradeTo   = "v1.29.15"
 		etcdUpgradeVersion           = "3.5.6-0"
 		coreDNSUpgradeVersion        = "v1.9.3"
 	)
