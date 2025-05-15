@@ -102,11 +102,13 @@ golangci-lint:
 
 ##@ Build
 
-build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+.PHONY: build
+build: manifests generate fmt vet ## Build manager binary.
+	go build -o bin/manager cmd/main.go
 
+.PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+	go run ./cmd/main.go
 
 docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} .
@@ -139,7 +141,7 @@ controller-test: ## Run controller tests
 	source ./scripts/fetch_ext_bins.sh; fetch_tools; setup_envs; $(GINKGO) --randomize-all controllers/infrastructure --coverprofile cover.out --vv
 
 webhook-test: ## Run webhook tests
-	source ./scripts/fetch_ext_bins.sh; fetch_tools; setup_envs; $(GINKGO) apis/infrastructure/v1beta1 --coverprofile cover.out
+	source ./scripts/fetch_ext_bins.sh; fetch_tools; setup_envs; $(GINKGO) api/infrastructure/v1beta1 --coverprofile cover.out
 
 test-e2e: take-user-input docker-build prepare-byoh-docker-host-image $(GINKGO) cluster-templates-e2e ## Run the end-to-end tests
 	$(GINKGO) -v -trace -tags=e2e -focus="$(GINKGO_FOCUS)" $(_SKIP_ARGS) -nodes=$(GINKGO_NODES) --noColor=$(GINKGO_NOCOLOR) $(GINKGO_ARGS) test/e2e -- \

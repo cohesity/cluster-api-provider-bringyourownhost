@@ -4,7 +4,7 @@ go 1.24.2
 
 toolchain go1.24.3
 
-replace github.com/insomniacslk/dhcp => github.com/harvester/dhcp v0.0.0-20220421024905-28b38eafefe3
+// replace github.com/insomniacslk/dhcp => github.com/harvester/dhcp v0.0.0-20220421024905-28b38eafefe3
 
 require (
 	github.com/docker/cli v27.1.1+incompatible
@@ -111,11 +111,9 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mdlayher/arp v0.0.0-20191213142603-f72070a231fc // indirect
-	github.com/mdlayher/ethernet v0.0.0-20190606142754-0394541c37b7 // indirect
 	github.com/mdlayher/ndp v1.0.1 // indirect
 	github.com/mdlayher/netlink v1.7.2 // indirect
-	github.com/mdlayher/raw v0.0.0-20211126142749-4eae47f3d54b // indirect
+	github.com/mdlayher/packet v1.1.2 // indirect
 	github.com/mdlayher/socket v0.4.1 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/mikefarah/yq/v4 v4.45.4 // indirect
@@ -208,7 +206,7 @@ require (
 	sigs.k8s.io/kustomize/cmd/config v0.19.0 // indirect
 	sigs.k8s.io/kustomize/kustomize/v5 v5.6.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.4.3 // indirect
 )
 
 tool (

@@ -10,7 +10,7 @@ import (
 
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit/cloudinitfakes"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/reconciler"
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"

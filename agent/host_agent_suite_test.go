@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/e2e"
 	"github.com/docker/docker/api/types/container"
 	dClient "github.com/docker/docker/client"

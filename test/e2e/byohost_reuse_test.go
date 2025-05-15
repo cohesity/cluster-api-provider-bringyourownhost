@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"

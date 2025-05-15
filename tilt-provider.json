@@ -4,11 +4,11 @@
     "image": "gcr.io/k8s-staging-cluster-api/cluster-api-byoh-controller",
     "label": "CAPB",
     "live_reload_deps": [
-      "main.go",
+      "cmd/main.go",
       "go.mod",
       "go.sum",
-      "apis/infrastructure",
-      "controllers/infrastructure",
+      "api/infrastructure",
+      "internal/controller/infrastructure",
       "pkg"
     ]
   }

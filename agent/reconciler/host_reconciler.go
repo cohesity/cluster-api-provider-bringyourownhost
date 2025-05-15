@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/kube-vip/kube-vip/pkg/vip"
 )
 

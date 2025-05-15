@@ -5,9 +5,9 @@ area/docs:
 area/installer:
 - "agent-installer/**/*"
 
-area/apis:
-- "apis/*"
-- "apis/**/*"
+area/api:
+- "api/*"
+- "api/**/*"
 
 area/test-release:
 - "hack/**/*"
@@ -16,7 +16,7 @@ area/test-release:
 - "Makefile"
 
 area:
-- "apis"
+- "api"
 - "docs"
 - "test-release"
 - "installer"

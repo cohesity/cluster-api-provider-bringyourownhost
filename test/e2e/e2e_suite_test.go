@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	infraproviderv1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	infraproviderv1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

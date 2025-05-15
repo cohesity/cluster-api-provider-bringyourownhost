@@ -16,7 +16,7 @@ import (
 
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version"
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/e2e"
 	dockertypes "github.com/docker/docker/api/types"

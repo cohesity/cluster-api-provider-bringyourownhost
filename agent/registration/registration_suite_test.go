@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	certv1 "k8s.io/api/certificates/v1"

@@ -19,7 +19,7 @@ import (
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/reconciler"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version"
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/feature"
 	"github.com/go-logr/logr"
 	pflag "github.com/spf13/pflag"

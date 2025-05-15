@@ -6,7 +6,7 @@ comment:                  # this is a top-level key
 #list of paths (folders or file names) to exclude files from being collected by Codecov
 ignore:
 - "test"
-- "controllers/infrastructure/byohost_controller.go"
-- "controllers/infrastructure/byomachinetemplate_controller.go"
-- "apis/infrastructure/v1beta1/*_types.go"
-- "apis/infrastructure/v1beta1/zz_generated.deepcopy.go"
+- "internal/controller/infrastructure/byohost_controller.go"
+- "internal/controller/infrastructure/byomachinetemplate_controller.go"
+- "api/infrastructure/v1beta1/*_types.go"
+- "api/infrastructure/v1beta1/zz_generated.deepcopy.go"
