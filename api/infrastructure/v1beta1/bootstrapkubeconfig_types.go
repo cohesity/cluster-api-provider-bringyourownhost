@@ -27,8 +27,12 @@ const (
 	BootstrapTokenExtraGroups = "system:bootstrappers:byoh"
 )
 
-// BootstrapKubeconfigSpec defines the desired state of BootstrapKubeconfig
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// BootstrapKubeconfigSpec defines the desired state of BootstrapKubeconfig.
 type BootstrapKubeconfigSpec struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	// APIServer is the address of the kubernetes cluster (https://hostname:port).
 	APIServer string `json:"apiserver"`
 
@@ -41,8 +45,10 @@ type BootstrapKubeconfigSpec struct {
 	CertificateAuthorityData string `json:"certificate-authority-data"`
 }
 
-// BootstrapKubeconfigStatus defines the observed state of BootstrapKubeconfig
+// BootstrapKubeconfigStatus defines the observed state of BootstrapKubeconfig.
 type BootstrapKubeconfigStatus struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	// BootstrapKubeconfigData is an optional reference to a bootstrap kubeconfig info
 	// for starting the host registration process
 	// +optional
@@ -52,7 +58,7 @@ type BootstrapKubeconfigStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// BootstrapKubeconfig is the Schema for the bootstrapkubeconfigs API
+// BootstrapKubeconfig is the Schema for the bootstrapkubeconfigs API.
 type BootstrapKubeconfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -63,7 +69,7 @@ type BootstrapKubeconfig struct {
 
 // +kubebuilder:object:root=true
 
-// BootstrapKubeconfigList contains a list of BootstrapKubeconfig
+// BootstrapKubeconfigList contains a list of BootstrapKubeconfig.
 type BootstrapKubeconfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

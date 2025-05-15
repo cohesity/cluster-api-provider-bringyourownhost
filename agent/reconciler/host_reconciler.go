@@ -12,6 +12,7 @@ import (
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/common"
 	"github.com/pkg/errors"
+	"golang.org/x/sys/unix"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -334,11 +335,13 @@ func (r *HostReconciler) deleteEndpointIP(ctx context.Context, byoHost *infrastr
 	logger := ctrl.LoggerFrom(ctx)
 	logger.Info("Removing network endpoints")
 	if IP, ok := byoHost.Annotations[infrastructurev1beta1.EndPointIPAnnotation]; ok {
-		network, err := vip.NewConfig(IP, registration.LocalHostRegistrar.ByoHostInfo.DefaultNetworkInterfaceName, "", false, 0)
+		networks, err := vip.NewConfig(IP, registration.LocalHostRegistrar.ByoHostInfo.DefaultNetworkInterfaceName, false, "", false, 0, unix.RTN_UNICAST, unix.RTN_UNICAST, "", "", "")
 		if err == nil {
-			err := network.DeleteIP()
-			if err != nil {
-				return err
+			for _, network := range networks {
+				err := network.DeleteIP()
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

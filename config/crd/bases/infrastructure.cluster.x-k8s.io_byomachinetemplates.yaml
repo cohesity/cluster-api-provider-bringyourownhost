@@ -17,7 +17,7 @@ spec:
     - name: v1beta1
       schema:
         openAPIV3Schema:
-          description: ByoMachineTemplate is the Schema for the byomachinetemplates API
+          description: ByoMachineTemplate is the Schema for the byomachinetemplates API.
           properties:
             apiVersion:
               description: |-
@@ -37,7 +37,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ByoMachineTemplateSpec defines the desired state of ByoMachineTemplate
+              description: ByoMachineTemplateSpec defines the desired state of ByoMachineTemplate.
               properties:
                 template:
                   description: ByoMachineTemplateResource defines the desired state of ByoMachineTemplateResource
@@ -145,7 +145,7 @@ spec:
                 - template
               type: object
             status:
-              description: ByoMachineTemplateStatus defines the observed state of ByoMachineTemplate
+              description: ByoMachineTemplateStatus defines the observed state of ByoMachineTemplate.
               type: object
           type: object
       served: true

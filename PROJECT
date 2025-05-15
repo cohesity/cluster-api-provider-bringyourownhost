@@ -2,9 +2,10 @@
 # This file is used to track the info used to scaffold your project
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
+cliVersion: 4.6.0
 domain: cluster.x-k8s.io
 layout:
-- go.kubebuilder.io/v3
+- go.kubebuilder.io/v4
 multigroup: true
 projectName: byoh
 repo: github.com/cohesity/cluster-api-provider-bringyourownhost
@@ -12,6 +13,7 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: cluster.x-k8s.io
   group: infrastructure
   kind: ByoMachine
@@ -20,6 +22,7 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: cluster.x-k8s.io
   group: infrastructure
   kind: ByoHost
@@ -31,21 +34,27 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: cluster.x-k8s.io
   group: infrastructure
   kind: ByoCluster
   path: github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1
   version: v1beta1
-  webhooks:
-    defaulting: true
-    validation: true
-    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: cluster.x-k8s.io
+  group: infrastructure
+  kind: ByoMachineTemplate
+  path: github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1
+  version: v1beta1
 - api:
     crdVersion: v1
     namespaced: true
   domain: cluster.x-k8s.io
   group: infrastructure
-  kind: ByoMachineTemplate
+  kind: ByoClusterTemplate
   path: github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1
   version: v1beta1
 - api:

@@ -17,7 +17,7 @@ spec:
     - name: v1beta1
       schema:
         openAPIV3Schema:
-          description: K8sInstallerConfig is the Schema for the k8sinstallerconfigs API
+          description: K8sInstallerConfig is the Schema for the k8sinstallerconfigs API.
           properties:
             apiVersion:
               description: |-
@@ -37,7 +37,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: K8sInstallerConfigSpec defines the desired state of K8sInstallerConfig
+              description: K8sInstallerConfigSpec defines the desired state of K8sInstallerConfig.
               properties:
                 bundleRepo:
                   description: BundleRepo is the OCI registry from which the carvel imgpkg bundle will be downloaded
@@ -50,7 +50,7 @@ spec:
                 - bundleType
               type: object
             status:
-              description: K8sInstallerConfigStatus defines the observed state of K8sInstallerConfig
+              description: K8sInstallerConfigStatus defines the observed state of K8sInstallerConfig.
               properties:
                 installationSecret:
                   description: InstallationSecret is an optional reference to a generated installation secret by K8sInstallerConfig controller

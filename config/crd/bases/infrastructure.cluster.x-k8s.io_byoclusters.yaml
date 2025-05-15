@@ -19,7 +19,7 @@ spec:
     - name: v1beta1
       schema:
         openAPIV3Schema:
-          description: ByoCluster is the Schema for the byoclusters API
+          description: ByoCluster is the Schema for the byoclusters API.
           properties:
             apiVersion:
               description: |-
@@ -39,7 +39,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ByoClusterSpec defines the desired state of ByoCluster
+              description: ByoClusterSpec defines the desired state of ByoCluster.
               properties:
                 bundleLookupBaseRegistry:
                   description: |-
@@ -62,7 +62,7 @@ spec:
                   type: object
               type: object
             status:
-              description: ByoClusterStatus defines the observed state of ByoCluster
+              description: ByoClusterStatus defines the observed state of ByoCluster.
               properties:
                 conditions:
                   description: Conditions defines current service state of the ByoCluster.

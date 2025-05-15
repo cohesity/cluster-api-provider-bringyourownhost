@@ -1,0 +1,9 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: ByoClusterTemplate
+metadata:
+  labels:
+    app.kubernetes.io/name: byoh
+    app.kubernetes.io/managed-by: kustomize
+  name: byoclustertemplate-sample
+spec:
+  # TODO(user): Add fields here

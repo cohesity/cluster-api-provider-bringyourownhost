@@ -22,45 +22,49 @@ import (
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 )
 
+// nolint:unused
 // log is for logging in this package.
 var bootstrapkubeconfiglog = logf.Log.WithName("bootstrapkubeconfig-resource")
 
 // APIServerURLScheme is the url scheme for the APIServer
 const APIServerURLScheme = "https"
 
+// SetupBootstrapKubeconfigWebhookWithManager registers the webhook for BootstrapKubeconfig in the manager.
 func SetupBootstrapKubeconfigWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&infrastructurev1beta1.BootstrapKubeconfig{}).
 		WithValidator(&BootstrapKubeconfigCustomValidator{}).
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-bootstrapkubeconfig,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=bootstrapkubeconfigs,verbs=create;update,versions=v1beta1,name=vbootstrapkubeconfig.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-infrastructure-cluster-x-k8s-io-v1beta1-bootstrapkubeconfig,mutating=false,failurePolicy=fail,sideEffects=None,groups=infrastructure.cluster.x-k8s.io,resources=bootstrapkubeconfigs,verbs=create;update,versions=v1beta1,name=vbootstrapkubeconfig-v1beta1.kb.io,admissionReviewVersions=v1
 
 // BootstrapKubeconfigCustomValidator struct is responsible for validating the BootstrapKubeconfig resource
 // when it is created, updated, or deleted.
 //
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
-// as this struct is used only for temporary operations and
-type BootstrapKubeconfigCustomValidator struct{}
+// as this struct is used only for temporary operations and does not need to be deeply copied.
+type BootstrapKubeconfigCustomValidator struct {
+	// TODO(user): Add more fields as needed for validation
+}
 
 var _ webhook.CustomValidator = &BootstrapKubeconfigCustomValidator{}
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type BootstrapKubeconfig.
 func (v *BootstrapKubeconfigCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	bootstrapKubeconfig, ok := obj.(*infrastructurev1beta1.BootstrapKubeconfig)
+	bootstrapkubeconfig, ok := obj.(*infrastructurev1beta1.BootstrapKubeconfig)
 	if !ok {
 		return nil, fmt.Errorf("expected a BootstrapKubeconfig object but got %T", obj)
 	}
 
-	bootstrapkubeconfiglog.Info("Validation for BootstrapKubeconfig upon creation", "name", bootstrapKubeconfig.GetName())
+	bootstrapkubeconfiglog.Info("Validation for BootstrapKubeconfig upon creation", "name", bootstrapkubeconfig.GetName())
 
 	var allErrs field.ErrorList
 
-	if err := validateAPIServer(bootstrapKubeconfig); err != nil {
+	if err := validateAPIServer(bootstrapkubeconfig); err != nil {
 		allErrs = append(allErrs, err...)
 	}
 
-	if err := validateCAData(bootstrapKubeconfig); err != nil {
+	if err := validateCAData(bootstrapkubeconfig); err != nil {
 		allErrs = append(allErrs, err...)
 	}
 
@@ -70,25 +74,25 @@ func (v *BootstrapKubeconfigCustomValidator) ValidateCreate(ctx context.Context,
 
 	return nil, apierrors.NewInvalid(
 		schema.GroupKind{Group: "infrastructure.cluster.x-k8s.io", Kind: "BootstrapKubeconfig"},
-		bootstrapKubeconfig.GetName(), allErrs)
+		bootstrapkubeconfig.GetName(), allErrs)
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
 func (v *BootstrapKubeconfigCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	bootstrapKubeconfig, ok := newObj.(*infrastructurev1beta1.BootstrapKubeconfig)
+	bootstrapkubeconfig, ok := newObj.(*infrastructurev1beta1.BootstrapKubeconfig)
 	if !ok {
 		return nil, fmt.Errorf("expected a BootstrapKubeconfig object for the newObj but got %T", newObj)
 	}
 
-	bootstrapkubeconfiglog.Info("Validation for BootstrapKubeconfig upon update", "name", bootstrapKubeconfig.GetName())
+	bootstrapkubeconfiglog.Info("Validation for BootstrapKubeconfig upon update", "name", bootstrapkubeconfig.GetName())
 
 	var allErrs field.ErrorList
 
-	if err := validateAPIServer(bootstrapKubeconfig); err != nil {
+	if err := validateAPIServer(bootstrapkubeconfig); err != nil {
 		allErrs = append(allErrs, err...)
 	}
 
-	if err := validateCAData(bootstrapKubeconfig); err != nil {
+	if err := validateCAData(bootstrapkubeconfig); err != nil {
 		allErrs = append(allErrs, err...)
 	}
 
@@ -98,17 +102,18 @@ func (v *BootstrapKubeconfigCustomValidator) ValidateUpdate(ctx context.Context,
 
 	return nil, apierrors.NewInvalid(
 		schema.GroupKind{Group: "infrastructure.cluster.x-k8s.io", Kind: "BootstrapKubeconfig"},
-		bootstrapKubeconfig.GetName(), allErrs)
+		bootstrapkubeconfig.GetName(), allErrs)
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type BootstrapKubeconfig.
 func (v *BootstrapKubeconfigCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	r, ok := obj.(*infrastructurev1beta1.BootstrapKubeconfig)
+	bootstrapkubeconfig, ok := obj.(*infrastructurev1beta1.BootstrapKubeconfig)
 	if !ok {
 		return nil, fmt.Errorf("expected a BootstrapKubeconfig object but got %T", obj)
 	}
+	bootstrapkubeconfiglog.Info("Validation for BootstrapKubeconfig upon deletion", "name", bootstrapkubeconfig.GetName())
 
-	bootstrapkubeconfiglog.Info("Validation for BootstrapKubeconfig upon delete", "name", r.GetName())
+	// TODO(user): fill in your validation logic upon object deletion.
 
 	return nil, nil
 }

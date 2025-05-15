@@ -76,7 +76,7 @@ spec:
                           type: object
                       type: object
                     spec:
-                      description: ByoClusterSpec defines the desired state of ByoCluster
+                      description: ByoClusterSpec defines the desired state of ByoCluster.
                       properties:
                         bundleLookupBaseRegistry:
                           description: |-

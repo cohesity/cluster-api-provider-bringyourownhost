@@ -8,8 +8,12 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
 // ByoClusterTemplateSpec defines the desired state of ByoClusterTemplate.
 type ByoClusterTemplateSpec struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	Template ByoClusterTemplateResource `json:"template"`
 }
 

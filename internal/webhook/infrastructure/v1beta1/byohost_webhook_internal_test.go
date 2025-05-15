@@ -27,7 +27,7 @@ var _ = Describe("ByohostWebhook/Unit", func() {
 	err := infrastructurev1beta1.AddToScheme(schema)
 	Expect(err).NotTo(HaveOccurred())
 	decoder := admission.NewDecoder(schema)
-	v := &ByoHostValidator{
+	v := &ByoHostCustomValidator{
 		Decoder: decoder,
 	}
 	Context("When ByoHost gets a create request", func() {

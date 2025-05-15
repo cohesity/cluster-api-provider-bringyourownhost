@@ -1,10 +1,10 @@
 // Copyright 2021 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package controllers
+package infrastructure
 
 import (
-	infrav1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/pkg/errors"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -16,9 +16,9 @@ type byoMachineScopeParams struct {
 	Client     client.Client
 	Cluster    *clusterv1.Cluster
 	Machine    *clusterv1.Machine
-	ByoCluster *infrav1.ByoCluster
-	ByoMachine *infrav1.ByoMachine
-	ByoHost    *infrav1.ByoHost
+	ByoCluster *infrastructurev1beta1.ByoCluster
+	ByoMachine *infrastructurev1beta1.ByoMachine
+	ByoHost    *infrastructurev1beta1.ByoHost
 }
 
 // byoMachineScope defines a scope defined around a ByoMachine and its machine, and its cluster.
@@ -27,9 +27,9 @@ type byoMachineScope struct {
 	patchHelper *patch.Helper
 	Cluster     *clusterv1.Cluster
 	Machine     *clusterv1.Machine
-	ByoCluster  *infrav1.ByoCluster
-	ByoMachine  *infrav1.ByoMachine
-	ByoHost     *infrav1.ByoHost
+	ByoCluster  *infrastructurev1beta1.ByoCluster
+	ByoMachine  *infrastructurev1beta1.ByoMachine
+	ByoHost     *infrastructurev1beta1.ByoHost
 }
 
 // newBYOMachineScope creates a new MachineScope from the supplied parameters.

@@ -1,13 +1,12 @@
 // Copyright 2022 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package controllers
+package infrastructure
 
 import (
 	"context"
 	"fmt"
 
-	infrav1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/installer"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -28,6 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 )
 
 // K8sInstallerConfigReconciler reconciles a K8sInstallerConfig object
@@ -41,8 +42,8 @@ type k8sInstallerConfigScope struct {
 	Client     client.Client
 	Logger     logr.Logger
 	Cluster    *clusterv1.Cluster
-	ByoMachine *infrav1.ByoMachine
-	Config     *infrav1.K8sInstallerConfig
+	ByoMachine *infrastructurev1beta1.ByoMachine
+	Config     *infrastructurev1beta1.K8sInstallerConfig
 }
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=k8sinstallerconfigs,verbs=get;list;watch;create;update;patch;delete
@@ -54,12 +55,15 @@ type k8sInstallerConfigScope struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.21.0/pkg/reconcile
 func (r *K8sInstallerConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	logger := log.FromContext(ctx)
 	logger.Info("Reconcile request received")
 
 	// Fetch the K8sInstallerConfig instance
-	config := &infrav1.K8sInstallerConfig{}
+	config := &infrastructurev1beta1.K8sInstallerConfig{}
 	err := r.Client.Get(ctx, req.NamespacedName, config)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -96,8 +100,8 @@ func (r *K8sInstallerConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}()
 
 	// Add finalizer first if not exist
-	if !controllerutil.ContainsFinalizer(scope.Config, infrav1.K8sInstallerConfigFinalizer) {
-		controllerutil.AddFinalizer(scope.Config, infrav1.K8sInstallerConfigFinalizer)
+	if !controllerutil.ContainsFinalizer(scope.Config, infrastructurev1beta1.K8sInstallerConfigFinalizer) {
+		controllerutil.AddFinalizer(scope.Config, infrastructurev1beta1.K8sInstallerConfigFinalizer)
 	}
 
 	// Handle deleted K8sInstallerConfig
@@ -130,8 +134,8 @@ func (r *K8sInstallerConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	switch {
 	// waiting for ByoMachine to updating it's ByoHostReady condition to false for reason InstallationSecretNotAvailableReason
-	case conditions.GetReason(byoMachine, infrav1.BYOHostReady) != infrav1.InstallationSecretNotAvailableReason:
-		logger.Info("ByoMachine is not waiting for InstallationSecret", "reason", conditions.GetReason(byoMachine, infrav1.BYOHostReady))
+	case conditions.GetReason(byoMachine, infrastructurev1beta1.BYOHostReady) != infrastructurev1beta1.InstallationSecretNotAvailableReason:
+		logger.Info("ByoMachine is not waiting for InstallationSecret", "reason", conditions.GetReason(byoMachine, infrastructurev1beta1.BYOHostReady))
 		return ctrl.Result{}, nil
 	// Status is ready means a config has been generated.
 	case config.Status.Ready:
@@ -146,7 +150,7 @@ func (r *K8sInstallerConfigReconciler) reconcileNormal(ctx context.Context, scop
 	logger := scope.Logger
 	logger.Info("Reconciling K8sInstallerConfig")
 
-	k8sVersion := scope.Config.GetAnnotations()[infrav1.K8sVersionAnnotation]
+	k8sVersion := scope.Config.GetAnnotations()[infrastructurev1beta1.K8sVersionAnnotation]
 	downloader := installer.NewBundleDownloader(scope.Config.Spec.BundleType, scope.Config.Spec.BundleRepo, "{{.BUNDLE_DOWNLOAD_PATH}}", logger)
 	installerObj, err := installer.NewInstaller(ctx, scope.ByoMachine.Status.HostInfo.OSImage, scope.ByoMachine.Status.HostInfo.Architecture, k8sVersion, downloader)
 	if err != nil {
@@ -177,7 +181,7 @@ func (r *K8sInstallerConfigReconciler) storeInstallationData(ctx context.Context
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: infrav1.GroupVersion.String(),
+					APIVersion: infrastructurev1beta1.GroupVersion.String(),
 					Kind:       scope.Config.Kind,
 					Name:       scope.Config.Name,
 					UID:        scope.Config.UID,
@@ -216,10 +220,11 @@ func (r *K8sInstallerConfigReconciler) storeInstallationData(ctx context.Context
 // SetupWithManager sets up the controller with the Manager.
 func (r *K8sInstallerConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&infrav1.K8sInstallerConfig{}).
-		Watches(&infrav1.ByoMachine{},
+		For(&infrastructurev1beta1.K8sInstallerConfig{}).
+		Watches(&infrastructurev1beta1.ByoMachine{},
 			handler.EnqueueRequestsFromMapFunc(r.ByoMachineToK8sInstallerConfigMapFunc),
 		).
+		Named("infrastructure-k8sinstallerconfig").
 		Complete(r)
 }
 
@@ -228,15 +233,15 @@ func (r *K8sInstallerConfigReconciler) SetupWithManager(mgr ctrl.Manager) error 
 func (r *K8sInstallerConfigReconciler) ByoMachineToK8sInstallerConfigMapFunc(ctx context.Context, o client.Object) []ctrl.Request {
 	logger := log.FromContext(ctx)
 
-	m, ok := o.(*infrav1.ByoMachine)
+	m, ok := o.(*infrastructurev1beta1.ByoMachine)
 	if !ok {
 		panic(fmt.Sprintf("Expected a ByoMachine but got a %T", o))
 	}
-	m.GetObjectKind().SetGroupVersionKind(infrav1.GroupVersion.WithKind("ByoMachine"))
+	m.GetObjectKind().SetGroupVersionKind(infrastructurev1beta1.GroupVersion.WithKind("ByoMachine"))
 
 	result := []ctrl.Request{}
-	if m.Spec.InstallerRef != nil && m.Spec.InstallerRef.GroupVersionKind() == infrav1.GroupVersion.WithKind("K8sInstallerConfigTemplate") {
-		configList := &infrav1.K8sInstallerConfigList{}
+	if m.Spec.InstallerRef != nil && m.Spec.InstallerRef.GroupVersionKind() == infrastructurev1beta1.GroupVersion.WithKind("K8sInstallerConfigTemplate") {
+		configList := &infrastructurev1beta1.K8sInstallerConfigList{}
 		if err := r.Client.List(ctx, configList, client.InNamespace(m.Namespace)); err != nil {
 			logger.Error(err, "failed to list K8sInstallerConfig")
 			return result
@@ -255,18 +260,18 @@ func (r *K8sInstallerConfigReconciler) ByoMachineToK8sInstallerConfigMapFunc(ctx
 func (r *K8sInstallerConfigReconciler) reconcileDelete(ctx context.Context, scope *k8sInstallerConfigScope) (reconcile.Result, error) {
 	logger := scope.Logger
 	logger.Info("Deleting K8sInstallerConfig")
-	controllerutil.RemoveFinalizer(scope.Config, infrav1.K8sInstallerConfigFinalizer)
+	controllerutil.RemoveFinalizer(scope.Config, infrastructurev1beta1.K8sInstallerConfigFinalizer)
 	return reconcile.Result{}, nil
 }
 
 // GetOwnerByoMachine returns the ByoMachine object owning the current resource.
-func GetOwnerByoMachine(ctx context.Context, c client.Client, obj *metav1.ObjectMeta) (*infrav1.ByoMachine, error) {
+func GetOwnerByoMachine(ctx context.Context, c client.Client, obj *metav1.ObjectMeta) (*infrastructurev1beta1.ByoMachine, error) {
 	for _, ref := range obj.OwnerReferences {
 		gv, err := schema.ParseGroupVersion(ref.APIVersion)
 		if err != nil {
 			return nil, err
 		}
-		if ref.Kind == "ByoMachine" && gv.Group == infrav1.GroupVersion.Group {
+		if ref.Kind == "ByoMachine" && gv.Group == infrastructurev1beta1.GroupVersion.Group {
 			return GetByoMachineByName(ctx, c, obj.Namespace, ref.Name)
 		}
 	}
@@ -274,8 +279,8 @@ func GetOwnerByoMachine(ctx context.Context, c client.Client, obj *metav1.Object
 }
 
 // GetByoMachineByName finds and return a ByoMachine object using the specified params.
-func GetByoMachineByName(ctx context.Context, c client.Client, namespace, name string) (*infrav1.ByoMachine, error) {
-	m := &infrav1.ByoMachine{}
+func GetByoMachineByName(ctx context.Context, c client.Client, namespace, name string) (*infrastructurev1beta1.ByoMachine, error) {
+	m := &infrastructurev1beta1.ByoMachine{}
 	key := client.ObjectKey{Name: name, Namespace: namespace}
 	if err := c.Get(ctx, key, m); err != nil {
 		return nil, err

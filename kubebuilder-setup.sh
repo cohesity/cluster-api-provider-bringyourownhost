@@ -12,13 +12,12 @@ current_dir=$(dirname "${current_script}")
 
 export GO111MODULE=on
 
-KUBEBUILDER=operator-sdk
-# KUBEBUILDER=kubebuilder
+# KUBEBUILDER=operator-sdk
+KUBEBUILDER=kubebuilder
 
 echo "Initializing ..."
 
-${KUBEBUILDER} init --domain k8s.cohesity.com --repo cohesity/athena/infra-operator
-${KUBEBUILDER} init --domain cluster.x-k8s.io --repo github.com/cohesity/cluster-api-provider-bringyourownhost --project-name byoh
+# ${KUBEBUILDER} init --domain cluster.x-k8s.io --repo github.com/cohesity/cluster-api-provider-bringyourownhost --project-name byoh
 ${KUBEBUILDER} edit --multigroup=true
 
 echo "Creating hack/boilerplate.go.txt ..."
@@ -40,3 +39,16 @@ ${KUBEBUILDER} create api --resource --controller --group infrastructure --versi
 ${KUBEBUILDER} create webhook --group infrastructure --version v1beta1 --kind ByoHost --programmatic-validation
 # ${KUBEBUILDER} create webhook --group infrastructure --version v1beta1 --kind ByoCluster --defaulting --programmatic-validation
 ${KUBEBUILDER} create webhook --group infrastructure --version v1beta1 --kind BootstrapKubeconfig --programmatic-validation
+
+git checkout HEAD -- agent
+git checkout HEAD -- common
+git checkout HEAD -- docs
+git checkout HEAD -- hack
+git checkout HEAD -- installer
+git checkout HEAD -- scripts
+git checkout HEAD -- test/e2e/data
+git checkout HEAD -- test/e2e/config
+git checkout HEAD -- test/utils/events
+git checkout HEAD -- test/builder
+git checkout HEAD -- static
+git checkout HEAD -- feature

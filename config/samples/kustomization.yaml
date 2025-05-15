@@ -1,0 +1,11 @@
+## Append samples of your project ##
+resources:
+- infrastructure_v1beta1_byomachine.yaml
+- infrastructure_v1beta1_byohost.yaml
+- infrastructure_v1beta1_byocluster.yaml
+- infrastructure_v1beta1_byomachinetemplate.yaml
+- infrastructure_v1beta1_byoclustertemplate.yaml
+- infrastructure_v1beta1_k8sinstallerconfig.yaml
+- infrastructure_v1beta1_k8sinstallerconfigtemplate.yaml
+- infrastructure_v1beta1_bootstrapkubeconfig.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

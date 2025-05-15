@@ -1,13 +1,12 @@
 // Copyright 2022 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package controllers_test
+package infrastructure_test
 
 import (
 	"context"
 	"fmt"
 
-	infrav1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	eventutils "github.com/cohesity/cluster-api-provider-bringyourownhost/test/utils/events"
 	. "github.com/onsi/ginkgo/v2"
@@ -25,13 +24,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 )
 
-var _ = Describe("Controllers/K8sInstallerConfigController", func() {
+var _ = Describe("K8sInstallerConfig Controller", func() {
 	var (
-		byoMachine                  *infrav1.ByoMachine
-		k8sinstallerConfig          *infrav1.K8sInstallerConfig
-		k8sinstallerConfigTemplate  *infrav1.K8sInstallerConfigTemplate
+		byoMachine                  *infrastructurev1beta1.ByoMachine
+		k8sinstallerConfig          *infrastructurev1beta1.K8sInstallerConfig
+		k8sinstallerConfigTemplate  *infrastructurev1beta1.K8sInstallerConfigTemplate
 		machine                     *clusterv1.Machine
 		k8sClientUncached           client.Client
 		byoMachineLookupKey         types.NamespacedName
@@ -87,127 +88,129 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 		eventutils.DrainEvents(recorder.Events)
 	})
 
-	It("should ignore k8sinstallerconfig if it is not found", func() {
-		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      "non-existent-k8sinstallerconfig",
-				Namespace: "non-existent-k8sinstallerconfig",
-			},
-		})
-		Expect(err).NotTo(HaveOccurred())
-	})
-
-	It("should ignore when owner is not set", func() {
-		k8sinstallerconfigWithNoOwner := builder.K8sInstallerConfig(defaultNamespace, defaultK8sInstallerConfigName).
-			WithClusterLabel(defaultClusterName).
-			Build()
-		Expect(k8sClientUncached.Create(ctx, k8sinstallerconfigWithNoOwner)).Should(Succeed())
-
-		WaitForObjectsToBePopulatedInCache(k8sinstallerconfigWithNoOwner)
-
-		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      k8sinstallerconfigWithNoOwner.Name,
-				Namespace: k8sinstallerconfigWithNoOwner.Namespace,
-			},
-		})
-		Expect(err).NotTo(HaveOccurred())
-	})
-
-	It("should return error when byomachine does not contain cluster name", func() {
-		byoMachineWithNonExistingCluster := builder.ByoMachine(defaultNamespace, defaultByoMachineName).
-			WithOwnerMachine(machine).
-			Build()
-		Expect(k8sClientUncached.Create(ctx, byoMachineWithNonExistingCluster)).Should(Succeed())
-
-		k8sinstallerconfigWithNonExistingCluster := builder.K8sInstallerConfig(defaultNamespace, defaultK8sInstallerConfigName).
-			WithClusterLabel("non-existent-cluster").
-			WithOwnerByoMachine(byoMachineWithNonExistingCluster).
-			Build()
-		Expect(k8sClientUncached.Create(ctx, k8sinstallerconfigWithNonExistingCluster)).Should(Succeed())
-
-		WaitForObjectsToBePopulatedInCache(byoMachineWithNonExistingCluster, k8sinstallerconfigWithNonExistingCluster)
-
-		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      k8sinstallerconfigWithNonExistingCluster.Name,
-				Namespace: k8sinstallerconfigWithNonExistingCluster.Namespace,
-			},
-		})
-		Expect(err).To(MatchError(util.ErrNoCluster))
-	})
-
-	It("should return error when cluster does not exist", func() {
-		byoMachineWithNonExistingCluster := builder.ByoMachine(defaultNamespace, defaultByoMachineName).
-			WithClusterLabel("non-existent-cluster").
-			WithOwnerMachine(machine).
-			Build()
-		Expect(k8sClientUncached.Create(ctx, byoMachineWithNonExistingCluster)).Should(Succeed())
-
-		k8sinstallerconfigWithNonExistingCluster := builder.K8sInstallerConfig(defaultNamespace, defaultK8sInstallerConfigName).
-			WithClusterLabel("non-existent-cluster").
-			WithOwnerByoMachine(byoMachineWithNonExistingCluster).
-			Build()
-		Expect(k8sClientUncached.Create(ctx, k8sinstallerconfigWithNonExistingCluster)).Should(Succeed())
-
-		WaitForObjectsToBePopulatedInCache(byoMachineWithNonExistingCluster, k8sinstallerconfigWithNonExistingCluster)
-
-		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      k8sinstallerconfigWithNonExistingCluster.Name,
-				Namespace: k8sinstallerconfigWithNonExistingCluster.Namespace,
-			},
-		})
-		Expect(err).To(MatchError("failed to get Cluster/non-existent-cluster: Cluster.cluster.x-k8s.io \"non-existent-cluster\" not found"))
-	})
-
-	It("should ignore when k8sinstallerconfig is paused", func() {
-		ph, err := patch.NewHelper(k8sinstallerConfig, k8sClientUncached)
-		Expect(err).ShouldNot(HaveOccurred())
-		pauseAnnotations := map[string]string{
-			clusterv1.PausedAnnotation: "paused",
-		}
-		annotations.AddAnnotations(k8sinstallerConfig, pauseAnnotations)
-		Expect(ph.Patch(ctx, k8sinstallerConfig, patch.WithStatusObservedGeneration{})).Should(Succeed())
-		WaitForObjectToBeUpdatedInCache(k8sinstallerConfig, func(object client.Object) bool {
-			return annotations.HasPaused(object.(*infrav1.K8sInstallerConfig))
+	Context("When reconciling a resource", func() {
+		It("should ignore k8sinstallerconfig if it is not found", func() {
+			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "non-existent-k8sinstallerconfig",
+					Namespace: "non-existent-k8sinstallerconfig",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
 
-		_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      k8sinstallerConfig.Name,
-				Namespace: k8sinstallerConfig.Namespace,
-			},
-		})
-		Expect(err).NotTo(HaveOccurred())
-	})
+		It("should ignore when owner is not set", func() {
+			k8sinstallerconfigWithNoOwner := builder.K8sInstallerConfig(defaultNamespace, defaultK8sInstallerConfigName).
+				WithClusterLabel(defaultClusterName).
+				Build()
+			Expect(k8sClientUncached.Create(ctx, k8sinstallerconfigWithNoOwner)).Should(Succeed())
 
-	It("should ignore when byomachine is not waiting for InstallationSecret", func() {
-		_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      k8sinstallerConfig.Name,
-				Namespace: k8sinstallerConfig.Namespace,
-			},
+			WaitForObjectsToBePopulatedInCache(k8sinstallerconfigWithNoOwner)
+
+			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      k8sinstallerconfigWithNoOwner.Name,
+					Namespace: k8sinstallerconfigWithNoOwner.Namespace,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
-		Expect(err).NotTo(HaveOccurred())
+
+		It("should return error when byomachine does not contain cluster name", func() {
+			byoMachineWithNonExistingCluster := builder.ByoMachine(defaultNamespace, defaultByoMachineName).
+				WithOwnerMachine(machine).
+				Build()
+			Expect(k8sClientUncached.Create(ctx, byoMachineWithNonExistingCluster)).Should(Succeed())
+
+			k8sinstallerconfigWithNonExistingCluster := builder.K8sInstallerConfig(defaultNamespace, defaultK8sInstallerConfigName).
+				WithClusterLabel("non-existent-cluster").
+				WithOwnerByoMachine(byoMachineWithNonExistingCluster).
+				Build()
+			Expect(k8sClientUncached.Create(ctx, k8sinstallerconfigWithNonExistingCluster)).Should(Succeed())
+
+			WaitForObjectsToBePopulatedInCache(byoMachineWithNonExistingCluster, k8sinstallerconfigWithNonExistingCluster)
+
+			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      k8sinstallerconfigWithNonExistingCluster.Name,
+					Namespace: k8sinstallerconfigWithNonExistingCluster.Namespace,
+				},
+			})
+			Expect(err).To(MatchError(util.ErrNoCluster))
+		})
+
+		It("should return error when cluster does not exist", func() {
+			byoMachineWithNonExistingCluster := builder.ByoMachine(defaultNamespace, defaultByoMachineName).
+				WithClusterLabel("non-existent-cluster").
+				WithOwnerMachine(machine).
+				Build()
+			Expect(k8sClientUncached.Create(ctx, byoMachineWithNonExistingCluster)).Should(Succeed())
+
+			k8sinstallerconfigWithNonExistingCluster := builder.K8sInstallerConfig(defaultNamespace, defaultK8sInstallerConfigName).
+				WithClusterLabel("non-existent-cluster").
+				WithOwnerByoMachine(byoMachineWithNonExistingCluster).
+				Build()
+			Expect(k8sClientUncached.Create(ctx, k8sinstallerconfigWithNonExistingCluster)).Should(Succeed())
+
+			WaitForObjectsToBePopulatedInCache(byoMachineWithNonExistingCluster, k8sinstallerconfigWithNonExistingCluster)
+
+			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      k8sinstallerconfigWithNonExistingCluster.Name,
+					Namespace: k8sinstallerconfigWithNonExistingCluster.Namespace,
+				},
+			})
+			Expect(err).To(MatchError("failed to get Cluster/non-existent-cluster: Cluster.cluster.x-k8s.io \"non-existent-cluster\" not found"))
+		})
+
+		It("should ignore when k8sinstallerconfig is paused", func() {
+			ph, err := patch.NewHelper(k8sinstallerConfig, k8sClientUncached)
+			Expect(err).ShouldNot(HaveOccurred())
+			pauseAnnotations := map[string]string{
+				clusterv1.PausedAnnotation: "paused",
+			}
+			annotations.AddAnnotations(k8sinstallerConfig, pauseAnnotations)
+			Expect(ph.Patch(ctx, k8sinstallerConfig, patch.WithStatusObservedGeneration{})).Should(Succeed())
+			WaitForObjectToBeUpdatedInCache(k8sinstallerConfig, func(object client.Object) bool {
+				return annotations.HasPaused(object.(*infrastructurev1beta1.K8sInstallerConfig))
+			})
+
+			_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      k8sinstallerConfig.Name,
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should ignore when byomachine is not waiting for InstallationSecret", func() {
+			_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      k8sinstallerConfig.Name,
+					Namespace: k8sinstallerConfig.Namespace,
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+		})
 	})
 
 	Context("When ByoMachine wait for InstallerSecret", func() {
 		BeforeEach(func() {
 			ph, err := patch.NewHelper(byoMachine, k8sClientUncached)
 			Expect(err).ShouldNot(HaveOccurred())
-			byoMachine.Status.HostInfo = infrav1.HostInfo{
+			byoMachine.Status.HostInfo = infrastructurev1beta1.HostInfo{
 				Architecture: "amd64",
 				OSName:       "linux",
 				OSImage:      "Ubuntu 20.04.1 LTS",
 			}
 			conditions.Set(byoMachine, &clusterv1.Condition{
-				Type:   infrav1.BYOHostReady,
-				Reason: infrav1.InstallationSecretNotAvailableReason,
+				Type:   infrastructurev1beta1.BYOHostReady,
+				Reason: infrastructurev1beta1.InstallationSecretNotAvailableReason,
 			})
 			Expect(ph.Patch(ctx, byoMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
 			WaitForObjectToBeUpdatedInCache(byoMachine, func(object client.Object) bool {
-				return object.(*infrav1.ByoMachine).Status.HostInfo.Architecture == "amd64"
+				return object.(*infrastructurev1beta1.ByoMachine).Status.HostInfo.Architecture == "amd64"
 			})
 		})
 
@@ -220,10 +223,10 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			updatedConfig := &infrav1.K8sInstallerConfig{}
+			updatedConfig := &infrastructurev1beta1.K8sInstallerConfig{}
 			err = k8sClientUncached.Get(ctx, k8sInstallerConfigLookupKey, updatedConfig)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(controllerutil.ContainsFinalizer(updatedConfig, infrav1.K8sInstallerConfigFinalizer)).To(BeTrue())
+			Expect(controllerutil.ContainsFinalizer(updatedConfig, infrastructurev1beta1.K8sInstallerConfigFinalizer)).To(BeTrue())
 		})
 
 		It("should ignore when K8sInstallerConfig status is ready", func() {
@@ -232,7 +235,7 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			k8sinstallerConfig.Status.Ready = true
 			Expect(ph.Patch(ctx, k8sinstallerConfig, patch.WithStatusObservedGeneration{})).Should(Succeed())
 			WaitForObjectToBeUpdatedInCache(k8sinstallerConfig, func(object client.Object) bool {
-				return object.(*infrav1.K8sInstallerConfig).Status.Ready
+				return object.(*infrastructurev1beta1.K8sInstallerConfig).Status.Ready
 			})
 
 			_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
@@ -251,7 +254,7 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			byoMachine.Status.HostInfo.OSImage = unsupportedOsDist
 			Expect(ph.Patch(ctx, byoMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
 			WaitForObjectToBeUpdatedInCache(byoMachine, func(object client.Object) bool {
-				return object.(*infrav1.ByoMachine).Status.HostInfo.OSImage == unsupportedOsDist
+				return object.(*infrastructurev1beta1.ByoMachine).Status.HostInfo.OSImage == unsupportedOsDist
 			})
 
 			_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
@@ -270,7 +273,7 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			byoMachine.Status.HostInfo.Architecture = unsupportedArch
 			Expect(ph.Patch(ctx, byoMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
 			WaitForObjectToBeUpdatedInCache(byoMachine, func(object client.Object) bool {
-				return object.(*infrav1.ByoMachine).Status.HostInfo.Architecture == unsupportedArch
+				return object.(*infrastructurev1beta1.ByoMachine).Status.HostInfo.Architecture == unsupportedArch
 			})
 
 			_, err = k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
@@ -323,7 +326,7 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			updatedConfig := &infrav1.K8sInstallerConfig{}
+			updatedConfig := &infrastructurev1beta1.K8sInstallerConfig{}
 			err = k8sClientUncached.Get(ctx, k8sInstallerConfigLookupKey, updatedConfig)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -342,7 +345,7 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 					Namespace: k8sinstallerConfig.Namespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion: infrav1.GroupVersion.String(),
+							APIVersion: infrastructurev1beta1.GroupVersion.String(),
 							Kind:       "K8sInstallerConfig",
 							Name:       k8sinstallerConfig.Name,
 							UID:        k8sinstallerConfig.UID,
@@ -367,7 +370,7 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			updatedConfig := &infrav1.K8sInstallerConfig{}
+			updatedConfig := &infrastructurev1beta1.K8sInstallerConfig{}
 			err = k8sClientUncached.Get(ctx, k8sInstallerConfigLookupKey, updatedConfig)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -384,7 +387,7 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			updatedConfig := &infrav1.K8sInstallerConfig{}
+			updatedConfig := &infrastructurev1beta1.K8sInstallerConfig{}
 			err = k8sClientUncached.Get(ctx, k8sInstallerConfigLookupKey, updatedConfig)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -404,12 +407,12 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 				Expect(k8sClientUncached.Delete(ctx, k8sinstallerConfig)).Should(Succeed())
 
 				WaitForObjectToBeUpdatedInCache(k8sinstallerConfig, func(object client.Object) bool {
-					return !object.(*infrav1.K8sInstallerConfig).ObjectMeta.DeletionTimestamp.IsZero()
+					return !object.(*infrastructurev1beta1.K8sInstallerConfig).ObjectMeta.DeletionTimestamp.IsZero()
 				})
 			})
 
 			It("should delete the k8sInstallerConfig object", func() {
-				deletedConfig := &infrav1.K8sInstallerConfig{}
+				deletedConfig := &infrastructurev1beta1.K8sInstallerConfig{}
 				// assert K8sInstallerConfig Exists before reconcile
 				Expect(k8sClientUncached.Get(ctx, k8sInstallerConfigLookupKey, deletedConfig)).Should(Not(HaveOccurred()))
 				_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
@@ -429,19 +432,19 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 				BeforeEach(func() {
 					ph, err := patch.NewHelper(byoMachine, k8sClientUncached)
 					Expect(err).ShouldNot(HaveOccurred())
-					controllerutil.AddFinalizer(byoMachine, infrav1.MachineFinalizer)
+					controllerutil.AddFinalizer(byoMachine, infrastructurev1beta1.MachineFinalizer)
 					Expect(ph.Patch(ctx, byoMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
 
 					Expect(k8sClientUncached.Delete(ctx, byoMachine)).Should(Succeed())
 					WaitForObjectToBeUpdatedInCache(byoMachine, func(object client.Object) bool {
-						return !object.(*infrav1.ByoMachine).ObjectMeta.DeletionTimestamp.IsZero()
+						return !object.(*infrastructurev1beta1.ByoMachine).ObjectMeta.DeletionTimestamp.IsZero()
 					})
 					_, err = reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: byoMachineLookupKey})
 					Expect(err).ToNot(HaveOccurred())
 				})
 
 				It("should delete the k8sInstallerConfig object", func() {
-					deletedConfig := &infrav1.K8sInstallerConfig{}
+					deletedConfig := &infrastructurev1beta1.K8sInstallerConfig{}
 					// assert K8sInstallerConfig Exists before reconcile
 					Expect(k8sClientUncached.Get(ctx, k8sInstallerConfigLookupKey, deletedConfig)).Should(Not(HaveOccurred()))
 					_, err := k8sInstallerConfigReconciler.Reconcile(ctx, reconcile.Request{
@@ -476,7 +479,7 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 			}
 			Expect(ph.Patch(ctx, byoMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
 			WaitForObjectToBeUpdatedInCache(byoMachine, func(object client.Object) bool {
-				return object.(*infrav1.ByoMachine).Spec.InstallerRef != nil
+				return object.(*infrastructurev1beta1.ByoMachine).Spec.InstallerRef != nil
 			})
 
 			result := k8sInstallerConfigReconciler.ByoMachineToK8sInstallerConfigMapFunc(c, byoMachine)
@@ -490,11 +493,11 @@ var _ = Describe("Controllers/K8sInstallerConfigController", func() {
 				Kind:       "K8sInstallerConfigTemplate",
 				Name:       k8sinstallerConfigTemplate.Name,
 				Namespace:  k8sinstallerConfigTemplate.Namespace,
-				APIVersion: infrav1.GroupVersion.String(),
+				APIVersion: infrastructurev1beta1.GroupVersion.String(),
 			}
 			Expect(ph.Patch(ctx, byoMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
 			WaitForObjectToBeUpdatedInCache(byoMachine, func(object client.Object) bool {
-				return object.(*infrav1.ByoMachine).Spec.InstallerRef != nil
+				return object.(*infrastructurev1beta1.ByoMachine).Spec.InstallerRef != nil
 			})
 
 			result := k8sInstallerConfigReconciler.ByoMachineToK8sInstallerConfigMapFunc(c, byoMachine)

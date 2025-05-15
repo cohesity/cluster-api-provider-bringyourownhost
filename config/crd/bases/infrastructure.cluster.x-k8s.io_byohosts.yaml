@@ -29,7 +29,7 @@ spec:
       name: v1beta1
       schema:
         openAPIV3Schema:
-          description: ByoHost is the Schema for the byohosts API
+          description: ByoHost is the Schema for the byohosts API.
           properties:
             apiVersion:
               description: |-
@@ -49,7 +49,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ByoHostSpec defines the desired state of ByoHost
+              description: ByoHostSpec defines the desired state of ByoHost.
               properties:
                 bootstrapSecret:
                   description: |-
@@ -150,7 +150,7 @@ spec:
                   type: string
               type: object
             status:
-              description: ByoHostStatus defines the observed state of ByoHost
+              description: ByoHostStatus defines the observed state of ByoHost.
               properties:
                 conditions:
                   description: Conditions defines current service state of the BYOMachine.

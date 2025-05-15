@@ -7,7 +7,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ByoMachineTemplateSpec defines the desired state of ByoMachineTemplate
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// ByoMachineTemplateSpec defines the desired state of ByoMachineTemplate.
 type ByoMachineTemplateSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -15,13 +17,16 @@ type ByoMachineTemplateSpec struct {
 	Template ByoMachineTemplateResource `json:"template"`
 }
 
-// ByoMachineTemplateStatus defines the observed state of ByoMachineTemplate
-type ByoMachineTemplateStatus struct{}
+// ByoMachineTemplateStatus defines the observed state of ByoMachineTemplate.
+type ByoMachineTemplateStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// ByoMachineTemplate is the Schema for the byomachinetemplates API
+// ByoMachineTemplate is the Schema for the byomachinetemplates API.
 type ByoMachineTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -32,7 +37,7 @@ type ByoMachineTemplate struct {
 
 // +kubebuilder:object:root=true
 
-// ByoMachineTemplateList contains a list of ByoMachineTemplate
+// ByoMachineTemplateList contains a list of ByoMachineTemplate.
 type ByoMachineTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

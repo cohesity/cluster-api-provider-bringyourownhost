@@ -8,6 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
 const (
 	// K8sInstallerConfigFinalizer allows ReconcileK8sInstallerConfig to clean up secret
 	// resources associated with K8sInstallerConfig before removing it from the
@@ -15,8 +17,10 @@ const (
 	K8sInstallerConfigFinalizer = "k8sinstallerconfig.infrastructure.cluster.x-k8s.io"
 )
 
-// K8sInstallerConfigSpec defines the desired state of K8sInstallerConfig
+// K8sInstallerConfigSpec defines the desired state of K8sInstallerConfig.
 type K8sInstallerConfigSpec struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	// BundleRepo is the OCI registry from which the carvel imgpkg bundle will be downloaded
 	BundleRepo string `json:"bundleRepo"`
 
@@ -24,8 +28,10 @@ type K8sInstallerConfigSpec struct {
 	BundleType string `json:"bundleType"`
 }
 
-// K8sInstallerConfigStatus defines the observed state of K8sInstallerConfig
+// K8sInstallerConfigStatus defines the observed state of K8sInstallerConfig.
 type K8sInstallerConfigStatus struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	// Ready indicates the InstallationSecret field is ready to be consumed
 	// +optional
 	Ready bool `json:"ready,omitempty"`
@@ -38,7 +44,7 @@ type K8sInstallerConfigStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// K8sInstallerConfig is the Schema for the k8sinstallerconfigs API
+// K8sInstallerConfig is the Schema for the k8sinstallerconfigs API.
 type K8sInstallerConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -49,7 +55,7 @@ type K8sInstallerConfig struct {
 
 // +kubebuilder:object:root=true
 
-// K8sInstallerConfigList contains a list of K8sInstallerConfig
+// K8sInstallerConfigList contains a list of K8sInstallerConfig.
 type K8sInstallerConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

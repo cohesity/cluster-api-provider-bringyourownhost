@@ -1,14 +1,13 @@
 // Copyright 2021 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package controllers_test
+package infrastructure_test
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	controllers "github.com/cohesity/cluster-api-provider-bringyourownhost/internal/controller/infrastructure"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	eventutils "github.com/cohesity/cluster-api-provider-bringyourownhost/test/utils/events"
@@ -25,9 +24,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 )
 
-var _ = Describe("Controllers/ByomachineController", func() {
+var _ = Describe("ByoMachine Controller", func() {
 	var (
 		byoMachineLookupKey        types.NamespacedName
 		byoHostLookupKey           types.NamespacedName
@@ -76,37 +77,39 @@ var _ = Describe("Controllers/ByomachineController", func() {
 		eventutils.DrainEvents(recorder.Events)
 	})
 
-	It("should ignore byomachine if it is not found", func() {
-		_, err := reconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      "non-existent-byomachine",
-				Namespace: "non-existent-namespace",
-			},
+	Context("When reconciling a resource", func() {
+		It("should ignore byomachine if it is not found", func() {
+			_, err := reconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      "non-existent-byomachine",
+					Namespace: "non-existent-namespace",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
 		})
-		Expect(err).NotTo(HaveOccurred())
-	})
 
-	It("should return error when cluster does not exist", func() {
-		machineForByoMachineWithoutCluster := builder.Machine(defaultNamespace, "machine-for-a-byomachine-without-cluster").
-			WithClusterName(defaultClusterName).
-			Build()
-		Expect(k8sClientUncached.Create(ctx, machineForByoMachineWithoutCluster)).Should(Succeed())
+		It("should return error when cluster does not exist", func() {
+			machineForByoMachineWithoutCluster := builder.Machine(defaultNamespace, "machine-for-a-byomachine-without-cluster").
+				WithClusterName(defaultClusterName).
+				Build()
+			Expect(k8sClientUncached.Create(ctx, machineForByoMachineWithoutCluster)).Should(Succeed())
 
-		byoMachineWithNonExistingCluster := builder.ByoMachine(defaultNamespace, defaultByoMachineName).
-			WithClusterLabel("non-existent-cluster").
-			WithOwnerMachine(machine).
-			Build()
-		Expect(k8sClientUncached.Create(ctx, byoMachineWithNonExistingCluster)).Should(Succeed())
+			byoMachineWithNonExistingCluster := builder.ByoMachine(defaultNamespace, defaultByoMachineName).
+				WithClusterLabel("non-existent-cluster").
+				WithOwnerMachine(machine).
+				Build()
+			Expect(k8sClientUncached.Create(ctx, byoMachineWithNonExistingCluster)).Should(Succeed())
 
-		WaitForObjectsToBePopulatedInCache(machineForByoMachineWithoutCluster, byoMachineWithNonExistingCluster)
+			WaitForObjectsToBePopulatedInCache(machineForByoMachineWithoutCluster, byoMachineWithNonExistingCluster)
 
-		_, err := reconciler.Reconcile(ctx, reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      byoMachineWithNonExistingCluster.Name,
-				Namespace: byoMachineWithNonExistingCluster.Namespace,
-			},
+			_, err := reconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      byoMachineWithNonExistingCluster.Name,
+					Namespace: byoMachineWithNonExistingCluster.Namespace,
+				},
+			})
+			Expect(err).To(MatchError("failed to get Cluster/non-existent-cluster: Cluster.cluster.x-k8s.io \"non-existent-cluster\" not found"))
 		})
-		Expect(err).To(MatchError("failed to get Cluster/non-existent-cluster: Cluster.cluster.x-k8s.io \"non-existent-cluster\" not found"))
 	})
 
 	Context("When cluster infrastructure is ready", func() {
@@ -146,7 +149,7 @@ var _ = Describe("Controllers/ByomachineController", func() {
 				node = builder.Node(defaultNamespace, byoHost.Name).
 					WithProviderID(fmt.Sprintf("%s%s/%s", controllers.ProviderIDPrefix, byoHost.Name, util.RandomString(controllers.ProviderIDSuffixLength))).
 					Build()
-				Expect(clientFake.Create(ctx, node)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 				_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: byoMachineLookupKey})
 				Expect(err).ToNot(HaveOccurred())
 			})
@@ -155,7 +158,7 @@ var _ = Describe("Controllers/ByomachineController", func() {
 				node = builder.Node(defaultNamespace, byoHost.Name).
 					WithProviderID(fmt.Sprintf("%sanother-host/%s", controllers.ProviderIDPrefix, util.RandomString(controllers.ProviderIDSuffixLength))).
 					Build()
-				Expect(clientFake.Create(ctx, node)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 				_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: byoMachineLookupKey})
 				Expect(err).To(MatchError("invalid format for node.Spec.ProviderID"))
 			})
@@ -225,7 +228,7 @@ var _ = Describe("Controllers/ByomachineController", func() {
 				Expect(k8sClientUncached.Create(ctx, byoHost)).Should(Succeed())
 
 				node = builder.Node(defaultNamespace, byoHost.Name).Build()
-				Expect(clientFake.Create(ctx, node)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 				WaitForObjectsToBePopulatedInCache(byoHost)
 
 				byoHostLookupKey = types.NamespacedName{Name: byoHost.Name, Namespace: byoHost.Namespace}
@@ -274,7 +277,7 @@ var _ = Describe("Controllers/ByomachineController", func() {
 				}))
 
 				node := corev1.Node{}
-				err = clientFake.Get(ctx, types.NamespacedName{Name: byoHost.Name, Namespace: defaultNamespace}, &node)
+				err = k8sClient.Get(ctx, types.NamespacedName{Name: byoHost.Name, Namespace: defaultNamespace}, &node)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(node.Spec.ProviderID).To(ContainSubstring(controllers.ProviderIDPrefix))
@@ -587,7 +590,7 @@ var _ = Describe("Controllers/ByomachineController", func() {
 
 			It("should mark BYOHostReady condition as False when the InstallationSecret is not available", func() {
 				// making the node unavailable by deleting it so that the reason persists
-				Expect(clientFake.Delete(ctx, node)).Should(Succeed())
+				Expect(k8sClient.Delete(ctx, node)).Should(Succeed())
 
 				_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: byoMachineLookupKey})
 				Expect(err).Should(MatchError(fmt.Sprintf("nodes %q not found", byoHost.Name)))
@@ -704,8 +707,8 @@ var _ = Describe("Controllers/ByomachineController", func() {
 
 				WaitForObjectsToBePopulatedInCache(byoHost1, byoHost2)
 
-				Expect(clientFake.Create(ctx, builder.Node(defaultNamespace, byoHost1.Name).Build())).Should(Succeed())
-				Expect(clientFake.Create(ctx, builder.Node(defaultNamespace, byoHost2.Name).Build())).Should(Succeed())
+				Expect(k8sClient.Create(ctx, builder.Node(defaultNamespace, byoHost1.Name).Build())).Should(Succeed())
+				Expect(k8sClient.Create(ctx, builder.Node(defaultNamespace, byoHost2.Name).Build())).Should(Succeed())
 			})
 
 			It("claims one of the available host", func() {
@@ -729,11 +732,11 @@ var _ = Describe("Controllers/ByomachineController", func() {
 				Expect(len(events)).Should(Equal(3))
 
 				node1 := corev1.Node{}
-				err = clientFake.Get(ctx, types.NamespacedName{Name: byoHost1.Name, Namespace: defaultNamespace}, &node1)
+				err = k8sClient.Get(ctx, types.NamespacedName{Name: byoHost1.Name, Namespace: defaultNamespace}, &node1)
 				Expect(err).NotTo(HaveOccurred())
 
 				node2 := corev1.Node{}
-				err = clientFake.Get(ctx, types.NamespacedName{Name: byoHost2.Name, Namespace: defaultNamespace}, &node2)
+				err = k8sClient.Get(ctx, types.NamespacedName{Name: byoHost2.Name, Namespace: defaultNamespace}, &node2)
 				Expect(err).NotTo(HaveOccurred())
 
 				var nodeTagged bool
@@ -778,7 +781,7 @@ var _ = Describe("Controllers/ByomachineController", func() {
 				Expect(len(events)).Should(Equal(3))
 
 				node := corev1.Node{}
-				err = clientFake.Get(ctx, types.NamespacedName{Name: byoHost1.Name, Namespace: defaultNamespace}, &node)
+				err = k8sClient.Get(ctx, types.NamespacedName{Name: byoHost1.Name, Namespace: defaultNamespace}, &node)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(node.Spec.ProviderID).To(ContainSubstring(controllers.ProviderIDPrefix))

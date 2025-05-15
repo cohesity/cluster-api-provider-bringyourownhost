@@ -9,6 +9,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
 const (
 	// HostCleanupAnnotation annotation used to mark a host for cleanup
 	HostCleanupAnnotation = "byoh.infrastructure.cluster.x-k8s.io/unregistering"
@@ -22,8 +24,10 @@ const (
 	BundleLookupBaseRegistryAnnotation = "byoh.infrastructure.cluster.x-k8s.io/bundle-registry"
 )
 
-// ByoHostSpec defines the desired state of ByoHost
+// ByoHostSpec defines the desired state of ByoHost.
 type ByoHostSpec struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	// BootstrapSecret is an optional reference to a Cluster API Secret
 	// for bootstrap purpose
 	// +optional
@@ -52,8 +56,10 @@ type HostInfo struct {
 	Architecture string `json:"architecture,omitempty"`
 }
 
-// ByoHostStatus defines the observed state of ByoHost
+// ByoHostStatus defines the observed state of ByoHost.
 type ByoHostStatus struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	// MachineRef is an optional reference to a Cluster API Machine
 	// using this host.
 	// +optional
@@ -80,7 +86,7 @@ type ByoHostStatus struct {
 // +kubebuilder:printcolumn:name="OSImage",type="string",JSONPath=`.status.hostinfo.osimage`
 // +kubebuilder:printcolumn:name="Arch",type="string",JSONPath=`.status.hostinfo.architecture`
 
-// ByoHost is the Schema for the byohosts API
+// ByoHost is the Schema for the byohosts API.
 type ByoHost struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -91,7 +97,7 @@ type ByoHost struct {
 
 // +kubebuilder:object:root=true
 
-// ByoHostList contains a list of ByoHost
+// ByoHostList contains a list of ByoHost.
 type ByoHostList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

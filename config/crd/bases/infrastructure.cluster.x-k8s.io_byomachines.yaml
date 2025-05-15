@@ -19,7 +19,7 @@ spec:
     - name: v1beta1
       schema:
         openAPIV3Schema:
-          description: ByoMachine is the Schema for the byomachines API
+          description: ByoMachine is the Schema for the byomachines API.
           properties:
             apiVersion:
               description: |-
@@ -39,7 +39,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ByoMachineSpec defines the desired state of ByoMachine
+              description: ByoMachineSpec defines the desired state of ByoMachine.
               properties:
                 installerRef:
                   description: |-
@@ -135,7 +135,7 @@ spec:
                   x-kubernetes-map-type: atomic
               type: object
             status:
-              description: ByoMachineStatus defines the observed state of ByoMachine
+              description: ByoMachineStatus defines the observed state of ByoMachine.
               properties:
                 conditions:
                   description: Conditions defines current service state of the BYOMachine.

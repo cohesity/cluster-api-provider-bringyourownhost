@@ -1,14 +1,14 @@
 // Copyright 2022 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package controllers_test
+package infrastructure_test
 
 import (
 	"context"
 
 	b64 "encoding/base64"
 
-	infrav1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,12 +21,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var _ = Describe("Controllers/BoottrapKubeconfigController", func() {
+var _ = Describe("BootstrapKubeconfig Controller", func() {
 	var (
+		ctx                             = context.Background()
 		k8sClientUncached               client.Client
 		bootstrapKubeconfigLookupKey    types.NamespacedName
-		bootstrapKubeConfig             *infrav1.BootstrapKubeconfig
-		ctx                             = context.Background()
+		bootstrapKubeConfig             *infrastructurev1beta1.BootstrapKubeconfig
 		testServer                      = "123.123.123.123:1234"
 		testCAData                      = "test-ca-data"
 		existingBootstrapKubeconfigData = "i am already present"
@@ -47,15 +47,15 @@ var _ = Describe("Controllers/BoottrapKubeconfigController", func() {
 			var clientErr error
 			k8sClientUncached, clientErr = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 			Expect(clientErr).NotTo(HaveOccurred())
-			bootstrapKubeConfig = &infrav1.BootstrapKubeconfig{
-				TypeMeta:   metav1.TypeMeta{Kind: "BootstrapKubeconfig", APIVersion: infrav1.GroupVersion.String()},
+			bootstrapKubeConfig = &infrastructurev1beta1.BootstrapKubeconfig{
+				TypeMeta:   metav1.TypeMeta{Kind: "BootstrapKubeconfig", APIVersion: infrastructurev1beta1.GroupVersion.String()},
 				ObjectMeta: metav1.ObjectMeta{GenerateName: "bootstrap-kubeconfig", Namespace: "default"},
-				Spec: infrav1.BootstrapKubeconfigSpec{
+				Spec: infrastructurev1beta1.BootstrapKubeconfigSpec{
 					APIServer:                testServer,
 					InsecureSkipTLSVerify:    false,
 					CertificateAuthorityData: b64.StdEncoding.EncodeToString([]byte(testCAData)),
 				},
-				Status: infrav1.BootstrapKubeconfigStatus{},
+				Status: infrastructurev1beta1.BootstrapKubeconfigStatus{},
 			}
 			Expect(k8sClientUncached.Create(ctx, bootstrapKubeConfig)).Should(Succeed())
 			WaitForObjectsToBePopulatedInCache(bootstrapKubeConfig)
@@ -82,7 +82,7 @@ var _ = Describe("Controllers/BoottrapKubeconfigController", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			createdBootstrapKubeconfig := &infrav1.BootstrapKubeconfig{}
+			createdBootstrapKubeconfig := &infrastructurev1beta1.BootstrapKubeconfig{}
 			err = k8sClientUncached.Get(ctx, bootstrapKubeconfigLookupKey, createdBootstrapKubeconfig)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -93,9 +93,9 @@ var _ = Describe("Controllers/BoottrapKubeconfigController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// assert Server and CertificateAuthorityData are the same as that we have passed
-			Expect(bootstrapKubeconfigFileData.Clusters[infrav1.DefaultClusterName].Server).To(Equal(testServer))
+			Expect(bootstrapKubeconfigFileData.Clusters[infrastructurev1beta1.DefaultClusterName].Server).To(Equal(testServer))
 
-			caDataFromStatus := bootstrapKubeconfigFileData.Clusters[infrav1.DefaultClusterName].CertificateAuthorityData
+			caDataFromStatus := bootstrapKubeconfigFileData.Clusters[infrastructurev1beta1.DefaultClusterName].CertificateAuthorityData
 			Expect(string(caDataFromStatus)).To(Equal(testCAData))
 		})
 

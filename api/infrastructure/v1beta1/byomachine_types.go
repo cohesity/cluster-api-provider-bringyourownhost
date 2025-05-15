@@ -9,6 +9,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
 const (
 	// MachineFinalizer allows ReconcileByoMachine to clean up Byo
 	// resources associated with ByoMachine before removing it from the
@@ -16,8 +18,10 @@ const (
 	MachineFinalizer = "byomachine.infrastructure.cluster.x-k8s.io"
 )
 
-// ByoMachineSpec defines the desired state of ByoMachine
+// ByoMachineSpec defines the desired state of ByoMachine.
 type ByoMachineSpec struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	// Label Selector to choose the byohost
 	Selector *metav1.LabelSelector `json:"selector,omitempty"`
 
@@ -51,7 +55,7 @@ type NetworkStatus struct {
 	IsDefault bool `json:"isDefault,omitempty"`
 }
 
-// ByoMachineStatus defines the observed state of ByoMachine
+// ByoMachineStatus defines the observed state of ByoMachine.
 type ByoMachineStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -72,7 +76,7 @@ type ByoMachineStatus struct {
 // +kubebuilder:resource:path=byomachines,scope=Namespaced,shortName=byom
 // +kubebuilder:subresource:status
 
-// ByoMachine is the Schema for the byomachines API
+// ByoMachine is the Schema for the byomachines API.
 type ByoMachine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -83,7 +87,7 @@ type ByoMachine struct {
 
 // +kubebuilder:object:root=true
 
-// ByoMachineList contains a list of ByoMachine
+// ByoMachineList contains a list of ByoMachine.
 type ByoMachineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

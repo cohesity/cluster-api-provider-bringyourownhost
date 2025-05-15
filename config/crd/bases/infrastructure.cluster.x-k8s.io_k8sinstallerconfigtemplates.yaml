@@ -17,7 +17,7 @@ spec:
     - name: v1beta1
       schema:
         openAPIV3Schema:
-          description: K8sInstallerConfigTemplate is the Schema for the k8sinstallerconfigtemplates API
+          description: K8sInstallerConfigTemplate is the Schema for the k8sinstallerconfigtemplates API.
           properties:
             apiVersion:
               description: |-
@@ -37,7 +37,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: K8sInstallerConfigTemplateSpec defines the desired state of K8sInstallerConfigTemplate
+              description: K8sInstallerConfigTemplateSpec defines the desired state of K8sInstallerConfigTemplate.
               properties:
                 template:
                   properties:
@@ -61,7 +61,7 @@ spec:
                 - template
               type: object
             status:
-              description: K8sInstallerConfigTemplateStatus defines the observed state of K8sInstallerConfigTemplate
+              description: K8sInstallerConfigTemplateStatus defines the observed state of K8sInstallerConfigTemplate.
               type: object
           type: object
       served: true

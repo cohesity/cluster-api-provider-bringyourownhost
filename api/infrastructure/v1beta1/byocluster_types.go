@@ -8,6 +8,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
 const (
 	// ClusterFinalizer allows ReconcileByoCluster to clean up Byo
 	// resources associated with ByoCluster before removing it from the
@@ -15,8 +17,10 @@ const (
 	ClusterFinalizer = "byocluster.infrastructure.cluster.x-k8s.io"
 )
 
-// ByoClusterSpec defines the desired state of ByoCluster
+// ByoClusterSpec defines the desired state of ByoCluster.
 type ByoClusterSpec struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	// ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// +optional
 	ControlPlaneEndpoint APIEndpoint `json:"controlPlaneEndpoint"`
@@ -27,8 +31,10 @@ type ByoClusterSpec struct {
 	BundleLookupBaseRegistry string `json:"bundleLookupBaseRegistry,omitempty"`
 }
 
-// ByoClusterStatus defines the observed state of ByoCluster
+// ByoClusterStatus defines the observed state of ByoCluster.
 type ByoClusterStatus struct {
+	// Important: Run "make" to regenerate code after modifying this file
+
 	// +optional
 	Ready bool `json:"ready,omitempty"`
 
@@ -53,7 +59,7 @@ type APIEndpoint struct {
 // +kubebuilder:resource:path=byoclusters,scope=Namespaced,shortName=byoc
 // +kubebuilder:subresource:status
 
-// ByoCluster is the Schema for the byoclusters API
+// ByoCluster is the Schema for the byoclusters API.
 type ByoCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -74,7 +80,7 @@ func (byoCluster *ByoCluster) SetConditions(conditions clusterv1.Conditions) {
 
 // +kubebuilder:object:root=true
 
-// ByoClusterList contains a list of ByoCluster
+// ByoClusterList contains a list of ByoCluster.
 type ByoClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

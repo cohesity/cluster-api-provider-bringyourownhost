@@ -1,11 +1,12 @@
 // Copyright 2021 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package controllers_test
+package infrastructure_test
 
 import (
 	"context"
 	"go/build"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -40,7 +41,7 @@ import (
 
 var (
 	testEnv                               *envtest.Environment
-	clientFake                            client.Client
+	k8sClient                             client.Client
 	clientSetFake                         = fakeclientset.NewSimpleClientset()
 	reconciler                            *controllers.ByoMachineReconciler
 	byoClusterReconciler                  *controllers.ByoClusterReconciler
@@ -65,7 +66,7 @@ var (
 	cancel                                context.CancelFunc
 )
 
-func TestAPIs(t *testing.T) {
+func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecs(t, "Controller Suite")
@@ -73,7 +74,14 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
 	ctx, cancel = context.WithCancel(context.TODO())
+
+	var err error
+	err = infrastructurev1beta1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	// +kubebuilder:scaffold:scheme
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -85,7 +93,12 @@ var _ = BeforeSuite(func() {
 		ErrorIfCRDPathMissing: true,
 	}
 
-	var err error
+	// Retrieve the first found binary directory to allow running tests from IDEs
+	if getFirstFoundEnvTestBinaryDir() != "" {
+		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
+	}
+
+	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
@@ -117,7 +130,7 @@ var _ = BeforeSuite(func() {
 	Expect(k8sManager.GetClient().Create(context.Background(), capiCluster)).Should(Succeed())
 
 	node := builder.Node(defaultNamespace, defaultNodeName).Build()
-	clientFake = fake.NewClientBuilder().WithObjects(
+	k8sClient = fake.NewClientBuilder().WithObjects(
 		capiCluster,
 		node,
 	).Build()
@@ -126,7 +139,7 @@ var _ = BeforeSuite(func() {
 	reconciler = &controllers.ByoMachineReconciler{
 		Client: k8sManager.GetClient(),
 		Tracker: remote.NewTestClusterCacheTracker(logr.New(logf.NullLogSink{}),
-			clientFake, clientFake, scheme.Scheme,
+			k8sClient, k8sClient, scheme.Scheme,
 			client.ObjectKey{
 				Name: capiCluster.Name, Namespace: capiCluster.Namespace,
 			}),
@@ -168,8 +181,8 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	cancel()
 	By("tearing down the test environment")
+	cancel()
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
@@ -199,4 +212,27 @@ func WaitForObjectToBeUpdatedInCache(object client.Object, testObjectUpdatedFunc
 		}
 		return false
 	}).Should(BeTrue())
+}
+
+// getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
+// ENVTEST-based tests depend on specific binaries, usually located in paths set by
+// controller-runtime. When running tests directly (e.g., via an IDE) without using
+// Makefile targets, the 'BinaryAssetsDirectory' must be explicitly configured.
+//
+// This function streamlines the process by finding the required binaries, similar to
+// setting the 'KUBEBUILDER_ASSETS' environment variable. To ensure the binaries are
+// properly set up, run 'make setup-envtest' beforehand.
+func getFirstFoundEnvTestBinaryDir() string {
+	basePath := filepath.Join("..", "..", "..", "bin", "k8s")
+	entries, err := os.ReadDir(basePath)
+	if err != nil {
+		logf.Log.Error(err, "Failed to read directory", "path", basePath)
+		return ""
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			return filepath.Join(basePath, entry.Name())
+		}
+	}
+	return ""
 }
