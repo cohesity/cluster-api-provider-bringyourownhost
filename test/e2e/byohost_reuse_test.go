@@ -202,7 +202,7 @@ var _ = Describe("When BYO Host rejoins the capacity pool", func() {
 				err := getDockerClient().ContainerStop(ctx, byohostContainerID, container.StopOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
-				err = getDockerClient().ContainerRemove(ctx, byohostContainerID, types.ContainerRemoveOptions{})
+				err = getDockerClient().ContainerRemove(ctx, byohostContainerID, container.RemoveOptions{})
 				Expect(err).NotTo(HaveOccurred())
 			}
 		}

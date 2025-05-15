@@ -14,7 +14,6 @@ import (
 
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/apis/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/e2e"
-	dockertypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	dClient "github.com/docker/docker/client"
 	. "github.com/onsi/ginkgo/v2"
@@ -70,8 +69,8 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "config", "crd", "bases"),
-			filepath.Join(build.Default.GOPATH, "pkg", "mod", "sigs.k8s.io", "cluster-api@v1.4.4", "config", "crd", "bases"),
-			filepath.Join(build.Default.GOPATH, "pkg", "mod", "sigs.k8s.io", "cluster-api@v1.4.4", "bootstrap", "kubeadm", "config", "crd", "bases"),
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", "sigs.k8s.io", "cluster-api@v1.8.12", "config", "crd", "bases"),
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", "sigs.k8s.io", "cluster-api@v1.8.12", "bootstrap", "kubeadm", "config", "crd", "bases"),
 		},
 
 		ErrorIfCRDPathMissing: true,
@@ -163,7 +162,7 @@ func cleanup(ctx context.Context, byoHostContainer *container.CreateResponse, na
 	err := dockerClient.ContainerStop(ctx, byoHostContainer.ID, container.StopOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = dockerClient.ContainerRemove(ctx, byoHostContainer.ID, dockertypes.ContainerRemoveOptions{})
+	err = dockerClient.ContainerRemove(ctx, byoHostContainer.ID, container.RemoveOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
 	err = k8sClient.Delete(ctx, namespace)

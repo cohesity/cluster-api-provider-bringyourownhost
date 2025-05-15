@@ -192,7 +192,7 @@ func setupBootstrapCluster(config *clusterctl.E2EConfig, scheme *runtime.Scheme,
 	if !useExistingCluster {
 		clusterProvider = bootstrap.CreateKindBootstrapClusterAndLoadImages(context.TODO(), bootstrap.CreateKindBootstrapClusterAndLoadImagesInput{
 			Name:               config.ManagementClusterName,
-			KubernetesVersion:  "v1.29.15",
+			KubernetesVersion:  "v1.30.12",
 			RequiresDockerSock: config.HasDockerProvider(),
 			Images:             config.Images,
 			IPFamily:           config.GetVariable(IPFamily),

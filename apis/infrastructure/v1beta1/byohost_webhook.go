@@ -19,7 +19,7 @@ import (
 // ByoHostValidator validates ByoHosts
 type ByoHostValidator struct {
 	//	Client  client.Client
-	decoder *admission.Decoder
+	decoder admission.Decoder
 }
 
 // To allow byoh manager service account to patch ByoHost CR
@@ -75,7 +75,7 @@ func (v *ByoHostValidator) handleDelete(req *admission.Request) admission.Respon
 }
 
 // InjectDecoder injects the decoder.
-func (v *ByoHostValidator) InjectDecoder(d *admission.Decoder) error {
+func (v *ByoHostValidator) InjectDecoder(d admission.Decoder) error {
 	v.decoder = d
 	return nil
 }

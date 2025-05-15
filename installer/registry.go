@@ -119,18 +119,18 @@ func GetSupportedRegistry() registry {
 
 		// BYOH Bundle Repository. Associate bundle with installer
 		linuxDistro := "Ubuntu_20.04.1_x86-64"
-		reg.AddBundleInstaller(linuxDistro, "v1.27.*")
 		reg.AddBundleInstaller(linuxDistro, "v1.28.*")
 		reg.AddBundleInstaller(linuxDistro, "v1.29.*")
+		reg.AddBundleInstaller(linuxDistro, "v1.30.*")
 
 		/*
 		 * PLACEHOLDER - ADD MORE K8S VERSIONS HERE
 		 */
 
 		// Match any patch version of the specified Major & Minor K8s version
-		reg.AddK8sFilter("v1.27.*")
 		reg.AddK8sFilter("v1.28.*")
 		reg.AddK8sFilter("v1.29.*")
+		reg.AddK8sFilter("v1.30.*")
 
 		// Match concrete os version to repository os version
 		reg.AddOsFilter("Ubuntu_20.04.*_x86-64", linuxDistro)

@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	. "github.com/onsi/ginkgo/v2"
@@ -34,8 +33,8 @@ var _ = Describe("Clusterclass upgrade test [K8s-upgrade]", func() {
 		dockerClient                 *client.Client
 		allbyohostContainerIDs       []string
 		allAgentLogFiles             []string
-		kubernetesVersionUpgradeFrom = "v1.27.16"
-		kubernetesVersionUpgradeTo   = "v1.29.15"
+		kubernetesVersionUpgradeFrom = "v1.28.15"
+		kubernetesVersionUpgradeTo   = "v1.30.12"
 		etcdUpgradeVersion           = "3.5.6-0"
 		coreDNSUpgradeVersion        = "v1.9.3"
 	)
@@ -163,7 +162,7 @@ var _ = Describe("Clusterclass upgrade test [K8s-upgrade]", func() {
 				err := dockerClient.ContainerStop(ctx, byohostContainerID, container.StopOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
-				err = dockerClient.ContainerRemove(ctx, byohostContainerID, types.ContainerRemoveOptions{})
+				err = dockerClient.ContainerRemove(ctx, byohostContainerID, container.RemoveOptions{})
 				Expect(err).NotTo(HaveOccurred())
 			}
 		}

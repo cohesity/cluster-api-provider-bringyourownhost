@@ -149,7 +149,7 @@ var _ = Describe("When BYOH joins existing cluster [Installer]", func() {
 				err := dockerClient.ContainerStop(ctx, byohostContainerID, container.StopOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
-				err = dockerClient.ContainerRemove(ctx, byohostContainerID, types.ContainerRemoveOptions{})
+				err = dockerClient.ContainerRemove(ctx, byohostContainerID, container.RemoveOptions{})
 				Expect(err).NotTo(HaveOccurred())
 			}
 		}
