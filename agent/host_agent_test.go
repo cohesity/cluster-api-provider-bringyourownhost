@@ -54,6 +54,7 @@ var _ = Describe("Agent", func() {
 
 			hostName, err = os.Hostname()
 			Expect(err).NotTo(HaveOccurred())
+			hostName = strings.ToLower(hostName)
 			runner = setupTestInfra(ctx, hostName, getKubeConfig().Name(), ns)
 
 			byoHostContainer, err = runner.SetupByoDockerHost()
@@ -124,6 +125,7 @@ var _ = Describe("Agent", func() {
 			var err error
 			hostName, err = os.Hostname()
 			Expect(err).NotTo(HaveOccurred())
+			hostName = strings.ToLower(hostName)
 
 			runner = setupTestInfra(ctx, hostName, getKubeConfig().Name(), ns)
 			runner.CommandArgs["--label"] = "site=apac"
@@ -256,11 +258,12 @@ var _ = Describe("Agent", func() {
 				if err == nil {
 					data, err := os.ReadFile(agentLogFile)
 					if err == nil && strings.Contains(string(data), byoHost.Name) {
+						GinkgoLogr.Info("read data from agent log", "data", string(data))
 						return true
 					}
 				}
 				return false
-			}, 10, 1).ShouldNot(BeTrue())
+			}, 10, 1).Should(BeFalse())
 		})
 
 		Context("when machineref, bootstrap & installation secret is assigned", func() {
@@ -461,6 +464,7 @@ var _ = Describe("Agent", func() {
 
 			hostName, err = os.Hostname()
 			Expect(err).NotTo(HaveOccurred())
+			hostName = strings.ToLower(hostName)
 			runner = setupTestInfra(ctx, hostName, getKubeConfig().Name(), ns)
 
 			byoHostContainer, err = runner.SetupByoDockerHost()
@@ -516,6 +520,7 @@ var _ = Describe("Agent", func() {
 			var err error
 			hostName, err = os.Hostname()
 			Expect(err).NotTo(HaveOccurred())
+			hostName = strings.ToLower(hostName)
 
 			runner = setupTestInfra(ctx, hostName, getKubeConfig().Name(), ns)
 			runner.CommandArgs["--bootstrap-kubeconfig"] = "/root/config"
@@ -531,7 +536,7 @@ var _ = Describe("Agent", func() {
 		})
 
 		JustAfterEach(func() {
-			if CurrentGinkgoTestDescription().Failed {
+			if CurrentSpecReport().Failed() {
 				e2e.ShowFileContent(agentLogFile)
 			}
 		})
