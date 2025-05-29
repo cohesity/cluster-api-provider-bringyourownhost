@@ -66,7 +66,7 @@ spec:
         args:
         - --leader-elect
         - --health-probe-bind-address=:8081
-        image: gcr.io/k8s-staging-cluster-api/cluster-api-byoh-controller:latest
+        image: ghcr.io/cohesity/cluster-api-byoh-controller:latest
         name: manager
         ports: []
         securityContext:
