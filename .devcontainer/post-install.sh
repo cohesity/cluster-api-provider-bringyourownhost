@@ -14,6 +14,10 @@ curl -LO "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl"
 chmod +x kubectl
 mv kubectl /usr/local/bin/kubectl
 
+curl -L -o bazel https://github.com/aspect-build/aspect-cli/releases/download/2025.11.0/aspect-linux_amd64
+chmod +x ./bazel
+mv ./bazel /usr/local/bin/bazel
+
 docker network create -d=bridge --subnet=172.19.0.0/24 kind
 
 kind version
@@ -21,3 +25,4 @@ kubebuilder version
 docker --version
 go version
 kubectl version --client
+bazel version

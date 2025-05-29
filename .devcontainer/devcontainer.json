@@ -2,24 +2,24 @@
   "name": "Kubebuilder DevContainer",
   "image": "docker.io/golang:1.24",
   "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "configureZshAsDefaultShell": true
+    },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/git:1": {}
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/go:1": {},
+    "ghcr.io/devcontainers-community/features/bazel:1": {}
   },
-
-  "runArgs": ["--network=host"],
-
+  "runArgs": [
+    "--network=host"
+  ],
   "customizations": {
     "vscode": {
-      "settings": {
-        "terminal.integrated.shell.linux": "/bin/bash"
-      },
       "extensions": [
         "ms-kubernetes-tools.vscode-kubernetes-tools",
         "ms-azuretools.vscode-docker"
       ]
     }
   },
-
   "onCreateCommand": "bash .devcontainer/post-install.sh"
 }
-
