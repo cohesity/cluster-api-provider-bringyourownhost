@@ -32,7 +32,6 @@ var _ = Describe("When BYOH joins existing cluster [PR-Blocking]", func() {
 		cancelWatches       context.CancelFunc
 		clusterResources    *clusterctl.ApplyClusterTemplateAndWaitResult
 		dockerClient        *client.Client
-		err                 error
 		byohostContainerIDs []string
 		agentLogFile1       = "/tmp/host-agent1.log"
 		agentLogFile2       = "/tmp/host-agent2.log"
@@ -59,7 +58,7 @@ var _ = Describe("When BYOH joins existing cluster [PR-Blocking]", func() {
 	It("Should create a workload cluster with single BYOH host", func() {
 		clusterName = fmt.Sprintf("%s-%s", specName, util.RandomString(6))
 
-		dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		Expect(err).NotTo(HaveOccurred())
 
 		runner := ByoHostRunner{
