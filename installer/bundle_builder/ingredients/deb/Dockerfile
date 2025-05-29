@@ -8,7 +8,7 @@
 # 2. Run the image
 #
 
-ARG BASE_IMAGE=ubuntu:20.04
+ARG BASE_IMAGE=ubuntu:24.04
 FROM $BASE_IMAGE as build
 
 # Override to download other version

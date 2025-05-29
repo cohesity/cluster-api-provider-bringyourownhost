@@ -348,7 +348,7 @@ var _ = Describe("Controllers/ByomachineController", func() {
 					Expect(err).ShouldNot(HaveOccurred())
 					byoHost.Status.HostDetails = infrastructurev1beta1.HostInfo{
 						OSName:       "linux",
-						OSImage:      "Ubuntu 20.04.4 LTS",
+						OSImage:      "Ubuntu 24.04.4 LTS",
 						Architecture: "arm64",
 					}
 					if byoHost.Labels == nil {
@@ -360,7 +360,7 @@ var _ = Describe("Controllers/ByomachineController", func() {
 					WaitForObjectToBeUpdatedInCache(byoHost, func(object client.Object) bool {
 						return object.(*infrastructurev1beta1.ByoHost).Status.HostDetails == infrastructurev1beta1.HostInfo{
 							OSName:       "linux",
-							OSImage:      "Ubuntu 20.04.4 LTS",
+							OSImage:      "Ubuntu 24.04.4 LTS",
 							Architecture: "arm64",
 						}
 					})
