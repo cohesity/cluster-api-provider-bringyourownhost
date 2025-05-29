@@ -16,14 +16,48 @@ use_repo(multitool, "multitool")
 #########################
 # Go
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.from_file(go_mod = "//:go.mod")
 go_sdk.nogo(nogo = "//tools/lint:nogo")
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
+go_deps.gazelle_default_attributes(
+    build_extra_args = [
+        "-go_naming_convention_external=go_default_library",
+    ],
+    build_file_generation = "on",
+    directives = [
+        "gazelle:proto disable",
+    ],
+)
 
 # All *direct* Go dependencies of the module have to be listed explicitly.
 # Run 'bazel mod tidy' to update this
-use_repo(go_deps)
+use_repo(
+    go_deps,
+    "com_github_docker_cli",
+    "com_github_docker_docker",
+    "com_github_go_logr_logr",
+    "com_github_jackpal_gateway",
+    "com_github_kube_vip_kube_vip",
+    "com_github_maxbrunsfeld_counterfeiter_v6",
+    "com_github_onsi_ginkgo_v2",
+    "com_github_onsi_gomega",
+    "com_github_pkg_errors",
+    "com_github_spf13_pflag",
+    "io_k8s_api",
+    "io_k8s_apimachinery",
+    "io_k8s_client_go",
+    "io_k8s_cluster_bootstrap",
+    "io_k8s_component_base",
+    "io_k8s_klog_v2",
+    "io_k8s_sigs_cluster_api",
+    "io_k8s_sigs_cluster_api_test",
+    "io_k8s_sigs_controller_runtime",
+    "io_k8s_sigs_yaml",
+    "io_k8s_utils",
+    "org_golang_x_sys",
+)
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 

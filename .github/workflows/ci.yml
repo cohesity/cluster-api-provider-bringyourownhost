@@ -22,8 +22,8 @@ on:
 
 jobs:
   build-agent:
-      runs-on: ubuntu-24.04
-      steps:
+    runs-on: ubuntu-24.04
+    steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -32,8 +32,17 @@ jobs:
         with:
           go-version: 1.24.3
 
+      - uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          # Avoid downloading Bazel every time.
+          bazelisk-cache: true
+          # Store build cache per workflow.
+          disk-cache: ${{ github.workflow }}
+          # Share repository cache between workflows.
+          repository-cache: true
+
       - name: build agent
-        run: make host-agent-binaries
+        run: bazel build host-agent-binaries
 
   test:
     runs-on: ubuntu-24.04

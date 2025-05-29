@@ -2,7 +2,7 @@
 
 aspect.register_rule_kind("go_image", {
     "From": "//tools/oci:go_image.bzl",
-    "ResolveAttrs": ["binary"],
+    "ResolveAttrs": ["binary", "visibility"],
 })
 
 def declare_targets(ctx):
@@ -14,6 +14,7 @@ def declare_targets(ctx):
                 kind = "go_image",
                 attrs = {
                     "binary": go_library_target_name,
+                    "visibility": attr.string_list(),
                 },
             )
 

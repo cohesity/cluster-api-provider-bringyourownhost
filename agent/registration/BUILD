@@ -1,0 +1,60 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "registration",
+    srcs = [
+        "csr.go",
+        "doc.go",
+        "host_registrar.go",
+    ],
+    importpath = "github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/infrastructure/v1beta1",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_jackpal_gateway//:gateway",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//certificates/v1:certificates",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_client_go//tools/clientcmd/api",
+        "@io_k8s_client_go//util/cert",
+        "@io_k8s_client_go//util/certificate/csr",
+        "@io_k8s_client_go//util/keyutil",
+        "@io_k8s_klog_v2//:klog",
+        "@io_k8s_sigs_cluster_api//util/patch",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+    ],
+)
+
+go_test(
+    name = "registration_test",
+    srcs = [
+        "csr_internal_test.go",
+        "csr_test.go",
+        "host_registrar_internal_test.go",
+        "host_registrar_test.go",
+        "registration_suite_test.go",
+    ],
+    embed = [":registration"],
+    deps = [
+        "//api/infrastructure/v1beta1",
+        "//test/builder",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_onsi_ginkgo_v2//:ginkgo",
+        "@com_github_onsi_gomega//:gomega",
+        "@io_k8s_api//certificates/v1:certificates",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_klog_v2//klogr",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/envtest",
+    ],
+)
