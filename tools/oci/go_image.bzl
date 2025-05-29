@@ -4,7 +4,7 @@ load("@aspect_bazel_lib//lib:tar.bzl", "tar")
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
 
-def go_image(name, binary, base = "@distroless_base"):
+def go_image(name, binary, base = "@distroless_base", visibility = None):
     tar(
         name = name + "_app_layer",
         srcs = [binary],
@@ -21,6 +21,7 @@ def go_image(name, binary, base = "@distroless_base"):
         entrypoint = [
             "/opt/app",
         ],
+        visibility = visibility,
     )
     platform_transition_filegroup(
         name = name + "_platform",

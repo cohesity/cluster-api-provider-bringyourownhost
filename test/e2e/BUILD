@@ -1,0 +1,62 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "e2e",
+    srcs = [
+        "doc.go",
+        "docker_helper.go",
+        "e2e_debug_helper.go",
+    ],
+    importpath = "github.com/cohesity/cluster-api-provider-bringyourownhost/test/e2e",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_docker_cli//cli/command",
+        "@com_github_docker_docker//api/types",
+        "@com_github_docker_docker//api/types/container",
+        "@com_github_docker_docker//api/types/filters",
+        "@com_github_docker_docker//api/types/network",
+        "@com_github_docker_docker//client",
+        "@com_github_docker_docker//pkg/archive",
+        "@com_github_docker_docker//pkg/system",
+        "@com_github_onsi_gomega//:gomega",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_sigs_cluster_api_test//framework",
+    ],
+)
+
+go_test(
+    name = "e2e_test",
+    srcs = [
+        "byohost_reuse_test.go",
+        "cluster_upgrade_test.go",
+        "clusterclass_upgrade_test.go",
+        "e2e_clusterclass_test.go",
+        "e2e_installer_test.go",
+        "e2e_suite_test.go",
+        "e2e_test.go",
+        "md_scale_test.go",
+    ],
+    embed = [":e2e"],
+    deps = [
+        "//apis/infrastructure/v1beta1",
+        "//test/builder",
+        "@com_github_docker_docker//api/types",
+        "@com_github_docker_docker//api/types/container",
+        "@com_github_docker_docker//client",
+        "@com_github_onsi_ginkgo_v2//:ginkgo",
+        "@com_github_onsi_gomega//:gomega",
+        "@com_github_onsi_gomega//gexec",
+        "@io_k8s_api//certificates/v1:certificates",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_sigs_cluster_api//api/v1beta1",
+        "@io_k8s_sigs_cluster_api//util",
+        "@io_k8s_sigs_cluster_api_test//framework",
+        "@io_k8s_sigs_cluster_api_test//framework/bootstrap",
+        "@io_k8s_sigs_cluster_api_test//framework/clusterctl",
+        "@io_k8s_utils//pointer",
+    ],
+)
