@@ -15,7 +15,7 @@ const (
 	ImgpkgVersion = "v0.36.4"
 )
 
-// Ubuntu20_04Installer represent the installer implementation for ubunto20.04.* os distribution
+// Ubuntu20_04Installer represent the installer implementation for ubunto24.04.* os distribution
 type Ubuntu20_04Installer struct {
 	install   string
 	uninstall string

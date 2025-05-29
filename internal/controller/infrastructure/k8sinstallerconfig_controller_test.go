@@ -202,7 +202,7 @@ var _ = Describe("K8sInstallerConfig Controller", func() {
 			byoMachine.Status.HostInfo = infrastructurev1beta1.HostInfo{
 				Architecture: "amd64",
 				OSName:       "linux",
-				OSImage:      "Ubuntu 20.04.1 LTS",
+				OSImage:      "Ubuntu 24.04.1 LTS",
 			}
 			conditions.Set(byoMachine, &clusterv1.Condition{
 				Type:   infrastructurev1beta1.BYOHostReady,

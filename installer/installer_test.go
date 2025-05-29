@@ -21,7 +21,7 @@ var _ = Describe("Byohost Installer Tests", func() {
 	)
 
 	BeforeEach(func() {
-		os = "Ubuntu 20.04"
+		os = "Ubuntu 24.04"
 		arch = "amd64"
 		k8sversion = "1.22.9"
 	})

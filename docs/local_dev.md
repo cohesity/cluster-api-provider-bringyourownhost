@@ -232,22 +232,22 @@ Note: It may happen that a specific patch version of a k8s minor release is not 
         <td>BYOH Bundle Name</td>
     </tr>
     <tr>
-        <td>Ubuntu_20.04.*_x86-64</td>
+        <td>Ubuntu_24.04.*_x86-64</td>
         <td>v1.28.*</td>
-        <td>byoh-bundle-ubuntu_20.04.1_x86-64_k8s:v1.28.*</td>
+        <td>byoh-bundle-ubuntu_24.04.1_x86-64_k8s:v1.28.*</td>
     </tr>
     <tr>
-        <td>Ubuntu_20.04.*_x86-64</td>
+        <td>Ubuntu_24.04.*_x86-64</td>
         <td>v1.29.*</td>
-        <td>byoh-bundle-ubuntu_20.04.1_x86-64_k8s:v1.29.*</td>
+        <td>byoh-bundle-ubuntu_24.04.1_x86-64_k8s:v1.29.*</td>
     </tr>
         <tr>
-        <td>Ubuntu_20.04.*_x86-64</td>
+        <td>Ubuntu_24.04.*_x86-64</td>
         <td>v1.30.*</td>
-        <td>byoh-bundle-ubuntu_20.04.1_x86-64_k8s:v1.30.*</td>
+        <td>byoh-bundle-ubuntu_24.04.1_x86-64_k8s:v1.30.*</td>
     </tr>
 </table>
-The '*' in OS means that all Ubuntu 20.04 patches will be handled by this BYOH bundle.
+The '*' in OS means that all Ubuntu 24.04 patches will be handled by this BYOH bundle.
 
 The '*' in the K8S Version means that the k8s minor release is supported but it may happen that a byoh bundle for a specific patch may not exist n the OCI registry,
 

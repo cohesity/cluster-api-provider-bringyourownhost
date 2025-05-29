@@ -13,11 +13,11 @@ import (
 
 func getMockFile(targetOs string) ([]byte, error) {
 	out := fmt.Sprintf(`NAME="Ubuntu"
-VERSION="20.04.4 LTS (Focal Fossa)"
+VERSION="24.04.4 LTS (Focal Fossa)"
 ID=ubuntu
 ID_LIKE=debian
 PRETTY_NAME="%s"
-VERSION_ID="20.04"
+VERSION_ID="24.04"
 HOME_URL="https://www.ubuntu.com/"
 SUPPORT_URL="https://help.ubuntu.com/"
 BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
@@ -30,10 +30,10 @@ UBUNTU_CODENAME=focal`, targetOs)
 var _ = Describe("Host Registrar Tests", func() {
 	Context("When the OS is detected", func() {
 		It("Should return the operating system for os following /etc/os-release", func() {
-			targetOs := "Ubuntu 20.04.4 LTS"
+			targetOs := "Ubuntu 24.04.4 LTS"
 			detectedOS, err := getOperatingSystem(func(string) ([]byte, error) { return getMockFile(targetOs) })
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(detectedOS).To(Equal("Ubuntu 20.04.4 LTS"))
+			Expect(detectedOS).To(Equal("Ubuntu 24.04.4 LTS"))
 		})
 
 		It("Should return the operating system for os following /usr/lib/os-release", func() {

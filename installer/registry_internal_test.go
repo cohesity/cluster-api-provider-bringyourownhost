@@ -105,12 +105,12 @@ var _ = Describe("Byohost Installer Tests", func() {
 
 		It("Should match with the supported os and k8s versions", func() {
 			osFilters, osBundles := r.ListOS()
-			Expect(osFilters).To(ContainElements("Ubuntu_20.04.*_x86-64"))
+			Expect(osFilters).To(ContainElements("Ubuntu_24.04.*_x86-64"))
 			Expect(osFilters).To(HaveLen(1))
-			Expect(osBundles).To(ContainElements("Ubuntu_20.04.1_x86-64"))
+			Expect(osBundles).To(ContainElements("Ubuntu_24.04.1_x86-64"))
 			Expect(osBundles).To(HaveLen(1))
 
-			osBundleResult := r.ListK8s("Ubuntu_20.04.1_x86-64")
+			osBundleResult := r.ListK8s("Ubuntu_24.04.1_x86-64")
 			Expect(osBundleResult).To(ContainElements("v1.28.*", "v1.29.*", "v1.30.*"))
 			Expect(osBundleResult).To(HaveLen(3))
 		})
