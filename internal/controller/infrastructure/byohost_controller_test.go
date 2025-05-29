@@ -4,8 +4,6 @@
 package infrastructure_test
 
 import (
-	"context"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -19,10 +17,8 @@ import (
 )
 
 var _ = Describe("ByoHost Controller", func() {
-	Context("When reconciling a resource", func() {
+	Context("When reconciling a resource", func(ctx SpecContext) {
 		const resourceName = "test-resource"
-
-		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,

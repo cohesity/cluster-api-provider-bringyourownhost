@@ -214,7 +214,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := (&remote.ClusterCacheReconciler{
+	if err = (&remote.ClusterCacheReconciler{
 		Client:  mgr.GetClient(),
 		Tracker: tracker,
 	}).SetupWithManager(c, mgr, concurrency(0)); err != nil {
@@ -222,7 +222,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := (&infrastructurecontroller.ByoMachineReconciler{
+	if err = (&infrastructurecontroller.ByoMachineReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Tracker:  tracker,
@@ -231,28 +231,28 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ByoMachine")
 		os.Exit(1)
 	}
-	if err := (&infrastructurecontroller.ByoHostReconciler{
+	if err = (&infrastructurecontroller.ByoHostReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ByoHost")
 		os.Exit(1)
 	}
-	if err := (&infrastructurecontroller.ByoClusterReconciler{
+	if err = (&infrastructurecontroller.ByoClusterReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(c, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ByoCluster")
 		os.Exit(1)
 	}
-	if err := (&infrastructurecontroller.ByoMachineTemplateReconciler{
+	if err = (&infrastructurecontroller.ByoMachineTemplateReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ByoMachineTemplate")
 		os.Exit(1)
 	}
-	if err := (&infrastructurecontroller.K8sInstallerConfigReconciler{
+	if err = (&infrastructurecontroller.K8sInstallerConfigReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

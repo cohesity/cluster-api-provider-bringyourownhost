@@ -19,7 +19,7 @@ then
     make host-agent-binaries
 else
     BIN="$1"
-    BIN_DIRECTORY=$(cd `dirname $1` && pwd)
+    BIN_DIRECTORY=$(cd $(dirname "$1") && pwd)
 fi
 
 # Create the services and watchers

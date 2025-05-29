@@ -1,7 +1,7 @@
 #!/bin/bash
 function isCmdInstalled() {
     local cmd=$1
-    which ${cmd}
+    which "${cmd}"
     if [ $? -eq 1 ] ; then
         echo "$cmd not found"
         return 0
@@ -15,8 +15,8 @@ function exitIfNot(){
     local code=$1
     local expectedCode=$2
     local prompt=$3
-    if [ ${code} == ${expectedCode} ]; then
-        echo ${prompt}
+    if [ "${code}" == "${expectedCode}" ]; then
+        echo "${prompt}"
         exit 1
     fi
 }
@@ -29,22 +29,22 @@ function runCmd(){
     local promptAfterCmdFail=$5
 
     if [ -n "${promptBeforeCmd}" ]; then
-        echo ${promptBeforeCmd}
+        echo "${promptBeforeCmd}"
     fi
 
     # run command
     ${cmd}
     returnCode=$?
-    if [ ${returnCode} -ne ${expectCode} ]; then
+    if [ ${returnCode} -ne "${expectCode}" ]; then
         if [ -n "${promptAfterCmdFail}" ]; then
-            echo ${promptAfterCmdFail}
+            echo "${promptAfterCmdFail}"
         fi
         echo "${cmd} failed, exit...."
         exit 1
     fi
 
     if [ -n "${PromptAfterCmdSuc}" ]; then
-        echo ${PromptAfterCmdSuc}
+        echo "${PromptAfterCmdSuc}"
     fi
 }
 
@@ -56,7 +56,7 @@ function isIPOccupied() {
     IFS=$'\n'
     for occupiedIPWithMask in ${occupiedIPList}
     do
-        occupiedIP=`echo $occupiedIPWithMask | sed -En 's/^(.*)\/([0-9]{1,2})/\1/p'`
+        occupiedIP=$(echo "$occupiedIPWithMask" | sed -En 's/^(.*)\/([0-9]{1,2})/\1/p')
         if [ "${ip}" == "${occupiedIP}" ]; then
              return 1
         fi
@@ -86,19 +86,19 @@ function num2IP() {
 }
 
 function binary2IP() {
-    num=`echo "ibase=2;  $1" | bc`
-    returnValue=$(num2IP $num)
-    echo ${returnValue}
+    num=$(echo "ibase=2;  $1" | bc)
+    returnValue=$(num2IP "$num")
+    echo "${returnValue}"
 }
 
 function calcControlPlaneIP() {
-    subNet=`docker network inspect kind | jq -r 'map(.IPAM.Config[].Subnet) []'`
-    gateways=`docker network inspect kind | jq -r 'map(.IPAM.Config[].Gateway) []'`
-    occupiedIPList=`docker network inspect kind | jq -r 'map(.Containers[].IPv4Address) []'`
+    subNet=$(docker network inspect kind | jq -r 'map(.IPAM.Config[].Subnet) []')
+    gateways=$(docker network inspect kind | jq -r 'map(.IPAM.Config[].Gateway) []')
+    occupiedIPList=$(docker network inspect kind | jq -r 'map(.Containers[].IPv4Address) []')
 
     for line in ${subNet}
     do
-        echo ${line} | grep ":"
+        echo "${line}" | grep ":"
         if [ $? -ne 0 ]; then
             IPMask=${line}
             break
@@ -109,24 +109,24 @@ function calcControlPlaneIP() {
     echo "occupiedIPList:${occupiedIPList}"
     echo "gateways:${gateways}"
 
-    ip=`echo $IPMask | sed -En 's/^(.*)\/([0-9]{1,2})/\1/p'`
-    ipSubNetBit=`echo $IPMask | sed -En 's/^(.*)\/([0-9]{1,2})/\2/p'`
+    ip=$(echo "$IPMask" | sed -En 's/^(.*)\/([0-9]{1,2})/\1/p')
+    ipSubNetBit=$(echo "$IPMask" | sed -En 's/^(.*)\/([0-9]{1,2})/\2/p')
     ipSubHostBit=$[32-${ipSubNetBit}]
 
     IFS=.
-    hexIP=`for str in ${ip}; do printf "%02X" $str; done`
-    binaryIP=`echo "ibase=16; obase=2; ${hexIP}" | bc`
+    hexIP=$(for str in ${ip}; do printf "%02X" "$str"; done)
+    binaryIP=$(echo "ibase=16; obase=2; ${hexIP}" | bc)
 
-    ipSubNet=`echo ${binaryIP:0:${ipSubNetBit}}`
+    ipSubNet=$(echo "${binaryIP:0:${ipSubNetBit}}")
 
     full0="00000000000000000000000000000001"
     full1="11111111111111111111111111111110"
 
-    minIPBinary=${ipSubNet}`echo ${full0:${ipSubNetBit}}`
-    maxIPBinary=${ipSubNet}`echo ${full1:${ipSubNetBit}}`
+    minIPBinary=${ipSubNet}$(echo ${full0:${ipSubNetBit}})
+    maxIPBinary=${ipSubNet}$(echo ${full1:${ipSubNetBit}})
 
-    minIPint=`echo "ibase=2; ${minIPBinary}"|bc`
-    maxIPint=`echo "ibase=2; ${maxIPBinary}"|bc`
+    minIPint=$(echo "ibase=2; ${minIPBinary}"|bc)
+    maxIPint=$(echo "ibase=2; ${maxIPBinary}"|bc)
 
     for((i=${minIPint};i<=${maxIPint};i++));
     do
@@ -284,7 +284,7 @@ function cleanUp(){
 }
 
 function readArgs() {
-    TEMP=`getopt -o nm:c:k: --long cni,md:,cp:,kv:`
+    TEMP=$(getopt -o nm:c:k: --long cni,md:,cp:,kv:)
     if [ $? != 0 ] ; then
         echo "Terminating..." >&2
         exit 1
@@ -384,7 +384,7 @@ function checkNodeStatus() {
                 continue
             fi
             if [ "${defaultCni}" == "1" ]; then
-                status=`KUBECONFIG=${kubeConfigFile} kubectl get nodes host${i} | grep -v NAME | awk '{print $2}'`
+                status=$(KUBECONFIG=${kubeConfigFile} kubectl get nodes host${i} | grep -v NAME | awk '{print $2}')
                 if [ "${status}" != "Ready" ]; then
                     sleep ${waitTime}
                     continue
@@ -411,18 +411,18 @@ function prepareImageAndBinary() {
     # Check if byoh image is existed
     image=$(docker images ${byohImageName}:${byohImageTag} | grep -v REPOSITORY)
     if [ -z "${image}" ]; then
-        cp -f ${reposDir}/test/e2e/kubernetes.list ${reposDir}/test/e2e/kubernetes.list.bak
+        cp -f "${reposDir}"/test/e2e/kubernetes.list "${reposDir}"/test/e2e/kubernetes.list.bak
         # The origin one will report error:   Could not connect to apt.kubernetes.io:443 (10.25.207.164), connection timed out [IP: 10.25.207.164 443]
-        echo "deb http://packages.cloud.google.com/apt/ kubernetes-xenial main" > ${reposDir}/test/e2e/kubernetes.list
+        echo "deb http://packages.cloud.google.com/apt/ kubernetes-xenial main" > "${reposDir}"/test/e2e/kubernetes.list
         runCmd "make prepare-byoh-docker-host-image" 0  "Making a byoh image: ${byohImageName}:${byohImageTag} ..."
-        mv -f ${reposDir}/test/e2e/kubernetes.list.bak ${reposDir}/test/e2e/kubernetes.list
+        mv -f "${reposDir}"/test/e2e/kubernetes.list.bak "${reposDir}"/test/e2e/kubernetes.list
     else
         echo "byoh image \"${byohImageName}:${byohImageTag}\" existed."
     fi
 
     # Build byoh binary
     # Check if byoh binary is existed
-    if [ ! -f ${byohBinaryFile} ]; then
+    if [ ! -f "${byohBinaryFile}" ]; then
         runCmd "make host-agent-binaries" 0  "Making byoh binary: ${byohBinaryFile} ..."
     else
         echo "byoh binary \"${byohBinaryFile}\" existed."
@@ -439,8 +439,8 @@ function bringUpByoHost(){
     local KIND_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${managerClusterName}-control-plane)
     local ok=0
 
-    cp -f ${HOME}/.kube/config ${manageClusterConfFile}
-    sed -i 's/    server\:.*/    server\: https\:\/\/'"${KIND_IP}"'\:6443/g' ${manageClusterConfFile}
+    cp -f "${HOME}"/.kube/config "${manageClusterConfFile}"
+    sed -i 's/    server\:.*/    server\: https\:\/\/'"${KIND_IP}"'\:6443/g' "${manageClusterConfFile}"
 
     for (( i=1; i<=${byohNums}; i++ ))
     do
@@ -478,7 +478,7 @@ function createWorkloadCluster() {
     # Find a available IP for control plane endpoint
     calcControlPlaneIP
 
-    CONTROL_PLANE_ENDPOINT_IP=${controlPlaneEndPointIp} clusterctl generate cluster ${workerClusterName} --infrastructure byoh --kubernetes-version ${kubernetesVersion} --control-plane-machine-count ${controlPlaneCount}  --worker-machine-count ${workerCount} --flavor docker > "${clusterYamlFile}"
+    CONTROL_PLANE_ENDPOINT_IP=${controlPlaneEndPointIp} clusterctl generate cluster ${workerClusterName} --infrastructure byoh --kubernetes-version "${kubernetesVersion}" --control-plane-machine-count "${controlPlaneCount}"  --worker-machine-count "${workerCount}" --flavor docker > "${clusterYamlFile}"
     if [ $? -ne 0 ]; then
         echo "Generate ${clusterYamlFile} failed, exiting..."
         exit 1
@@ -535,7 +535,7 @@ byohNums=2
 defaultCni="0"
 manageClusterConfFile="${HOME}/.kube/management-cluster.conf"
 kubeConfigFile=/tmp/byoh-cluster-kubeconfig
-reposDir=$(dirname $0)/../
+reposDir=$(dirname "$0")/../
 byohBinaryFile=${reposDir}/bin/byoh-hostagent-linux-amd64
 kubernetesVersion="v1.30.12"
 
