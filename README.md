@@ -93,7 +93,7 @@ If someone wants to implement their own installer controller then they need to f
 ## Supported OS and Kubernetes versions
 | Operating System  | Architecture  | Kubernetes v1.25.* | Kubernetes v1.26.* | Kubernetes v1.27.* |
 | ------------------|---------------|:------------------:|:------------------:|:------------------:|
-| Ubuntu 20.04.*    | amd64         |         ✓          |         ✓          |         ✓          |
+| Ubuntu 24.04.*    | amd64         |         ✓          |         ✓          |         ✓          |
 
 **NOTE:**  The '*' in OS means that all Ubuntu 24.04 patches are supported.
 
