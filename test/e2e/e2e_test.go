@@ -52,7 +52,6 @@ var _ = Describe("Manager", Ordered, func() {
 		cancelWatches       context.CancelFunc
 		clusterResources    *clusterctl.ApplyClusterTemplateAndWaitResult
 		dockerClient        *client.Client
-		err                 error
 		byohostContainerIDs []string
 		agentLogFile1       = "/tmp/host-agent1.log"
 		agentLogFile2       = "/tmp/host-agent2.log"
@@ -261,18 +260,18 @@ var _ = Describe("Manager", Ordered, func() {
 
 			By("waiting for the metrics endpoint to be ready")
 			verifyMetricsEndpointReady := func(g Gomega) {
-				cmd := exec.Command("kubectl", "get", "endpoints", metricsServiceName, "-n", namespace)
-				output, err := utils.Run(cmd)
-				g.Expect(err).NotTo(HaveOccurred())
+				cmdGE := exec.Command("kubectl", "get", "endpoints", metricsServiceName, "-n", namespace)
+				output, errR := utils.Run(cmdGE)
+				g.Expect(errR).NotTo(HaveOccurred())
 				g.Expect(output).To(ContainSubstring("8443"), "Metrics endpoint is not ready")
 			}
 			Eventually(verifyMetricsEndpointReady).Should(Succeed())
 
 			By("verifying that the controller manager is serving the metrics server")
 			verifyMetricsServerStarted := func(g Gomega) {
-				cmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace)
-				output, err := utils.Run(cmd)
-				g.Expect(err).NotTo(HaveOccurred())
+				cmdL := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace)
+				output, errL := utils.Run(cmdL)
+				g.Expect(errL).NotTo(HaveOccurred())
 				g.Expect(output).To(ContainSubstring("controller-runtime.metrics\tServing metrics server"),
 					"Metrics server not yet started")
 			}
@@ -364,7 +363,7 @@ var _ = Describe("Manager", Ordered, func() {
 		It("Should create a workload cluster with single BYOH host", func() {
 			clusterName = fmt.Sprintf("%s-%s", specName, util.RandomString(6))
 
-			dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+			dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 			Expect(err).NotTo(HaveOccurred())
 
 			runner := ByoHostRunner{
@@ -466,13 +465,13 @@ func serviceAccountToken() (string, error) {
 			serviceAccountName,
 		), "-f", tokenRequestFile)
 
-		output, err := cmd.CombinedOutput()
-		g.Expect(err).NotTo(HaveOccurred())
+		output, errO := cmd.CombinedOutput()
+		g.Expect(errO).NotTo(HaveOccurred())
 
 		// Parse the JSON output to extract the token
 		var token tokenRequest
-		err = json.Unmarshal(output, &token)
-		g.Expect(err).NotTo(HaveOccurred())
+		errU := json.Unmarshal(output, &token)
+		g.Expect(errU).NotTo(HaveOccurred())
 
 		out = token.Status.Token
 	}

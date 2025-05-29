@@ -17,7 +17,7 @@ import (
 )
 
 var _ = Describe("ByoHost Controller", func() {
-	Context("When reconciling a resource", func(ctx SpecContext) {
+	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 
 		typeNamespacedName := types.NamespacedName{
@@ -26,7 +26,7 @@ var _ = Describe("ByoHost Controller", func() {
 		}
 		byohost := &infrastructurev1beta1.ByoHost{}
 
-		BeforeEach(func() {
+		BeforeEach(func(ctx SpecContext) {
 			By("creating the custom resource for the Kind ByoHost")
 			err := k8sClient.Get(ctx, typeNamespacedName, byohost)
 			if err != nil && errors.IsNotFound(err) {
@@ -41,7 +41,7 @@ var _ = Describe("ByoHost Controller", func() {
 			}
 		})
 
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
 			resource := &infrastructurev1beta1.ByoHost{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
@@ -50,7 +50,7 @@ var _ = Describe("ByoHost Controller", func() {
 			By("Cleanup the specific resource instance ByoHost")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
-		It("should successfully reconcile the resource", func() {
+		It("should successfully reconcile the resource", func(ctx SpecContext) {
 			By("Reconciling the created resource")
 			controllerReconciler := &ByoHostReconciler{
 				Client: k8sClient,

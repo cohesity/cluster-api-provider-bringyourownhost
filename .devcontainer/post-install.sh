@@ -18,6 +18,13 @@ curl -L -o bazel https://github.com/aspect-build/aspect-cli/releases/download/20
 chmod +x ./bazel
 mv ./bazel /usr/local/bin/bazel
 
+apt-get update
+apt install direnv -y
+
+direnv allow
+echo 'eval "$(direnv hook bash)"' >> /home/vscode/.bashrc
+echo 'eval "$(direnv hook zsh)"' >> /home/vscode/.zshrc
+
 docker network create -d=bridge --subnet=172.19.0.0/24 kind
 
 kind version

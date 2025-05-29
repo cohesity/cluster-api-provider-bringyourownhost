@@ -11,6 +11,7 @@ require (
 	github.com/jackpal/gateway v1.1.1
 	github.com/kube-vip/kube-vip v0.8.7
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
+	github.com/mikefarah/yq/v4 v4.45.4
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
 	github.com/pkg/errors v0.9.1
@@ -26,6 +27,8 @@ require (
 	sigs.k8s.io/cluster-api v1.8.12
 	sigs.k8s.io/cluster-api/test v1.8.12
 	sigs.k8s.io/controller-runtime v0.18.7
+	sigs.k8s.io/controller-tools v0.15.0
+	sigs.k8s.io/kustomize/kustomize/v5 v5.6.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -116,7 +119,6 @@ require (
 	github.com/mdlayher/packet v1.1.2 // indirect
 	github.com/mdlayher/socket v0.4.1 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
-	github.com/mikefarah/yq/v4 v4.45.4 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
@@ -199,12 +201,10 @@ require (
 	k8s.io/apiserver v0.30.12 // indirect
 	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.30.0 // indirect
-	sigs.k8s.io/controller-tools v0.15.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kind v0.24.0 // indirect
 	sigs.k8s.io/kustomize/api v0.19.0 // indirect
 	sigs.k8s.io/kustomize/cmd/config v0.19.0 // indirect
-	sigs.k8s.io/kustomize/kustomize/v5 v5.6.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.3 // indirect
 )

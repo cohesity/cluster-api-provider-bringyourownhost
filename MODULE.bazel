@@ -8,6 +8,8 @@ bazel_dep(name = "gazelle", version = "0.43.0")
 bazel_dep(name = "rules_shell", version = "0.4.1")
 bazel_dep(name = "rules_oci", version = "2.2.6")
 bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_multirun", version = "0.12.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 
 multitool = use_extension("@rules_multitool//multitool:extension.bzl", "multitool")
 multitool.hub(lockfile = "//tools:tools.lock.json")
@@ -41,6 +43,7 @@ use_repo(
     "com_github_jackpal_gateway",
     "com_github_kube_vip_kube_vip",
     "com_github_maxbrunsfeld_counterfeiter_v6",
+    "com_github_mikefarah_yq_v4",
     "com_github_onsi_ginkgo_v2",
     "com_github_onsi_gomega",
     "com_github_pkg_errors",
@@ -54,10 +57,19 @@ use_repo(
     "io_k8s_sigs_cluster_api",
     "io_k8s_sigs_cluster_api_test",
     "io_k8s_sigs_controller_runtime",
+    "io_k8s_sigs_controller_tools",
+    "io_k8s_sigs_kustomize_kustomize_v5",
     "io_k8s_sigs_yaml",
     "io_k8s_utils",
     "org_golang_x_sys",
 )
+
+# go mod tools
+# go_tool_deps = use_extension("@gazelle//:extensions.bzl", "go_deps", isolate = True)
+# go_tool_deps.from_file(go_mod = "//:go.mod")
+# use_repo(
+#     go_tool_deps,
+# )
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 

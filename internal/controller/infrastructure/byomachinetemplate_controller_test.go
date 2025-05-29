@@ -4,8 +4,6 @@
 package infrastructure_test
 
 import (
-	"context"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -22,15 +20,13 @@ var _ = Describe("ByoMachineTemplate Controller", func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 
-		ctx := context.Background()
-
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
 		byomachinetemplate := &infrastructurev1beta1.ByoMachineTemplate{}
 
-		BeforeEach(func() {
+		BeforeEach(func(ctx SpecContext) {
 			By("creating the custom resource for the Kind ByoMachineTemplate")
 			err := k8sClient.Get(ctx, typeNamespacedName, byomachinetemplate)
 			if err != nil && errors.IsNotFound(err) {
@@ -45,7 +41,7 @@ var _ = Describe("ByoMachineTemplate Controller", func() {
 			}
 		})
 
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
 			resource := &infrastructurev1beta1.ByoMachineTemplate{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
@@ -54,7 +50,7 @@ var _ = Describe("ByoMachineTemplate Controller", func() {
 			By("Cleanup the specific resource instance ByoMachineTemplate")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
-		It("should successfully reconcile the resource", func() {
+		It("should successfully reconcile the resource", func(ctx SpecContext) {
 			By("Reconciling the created resource")
 			controllerReconciler := &ByoMachineTemplateReconciler{
 				Client: k8sClient,
