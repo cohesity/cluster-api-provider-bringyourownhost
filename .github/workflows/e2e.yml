@@ -21,7 +21,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.24.2
+        go-version: 1.24.3
 
     - name: Install ginkgo
       run: go install github.com/onsi/ginkgo/v2/ginkgo
