@@ -2,7 +2,7 @@
 SHELL:=/usr/bin/env bash
 
 # Define registries
-STAGING_REGISTRY ?= gcr.io/k8s-staging-cluster-api
+STAGING_REGISTRY ?= ghcr.io/cohesity
 
 IMAGE_NAME ?= cluster-api-byoh-controller
 TAG ?= dev
@@ -192,14 +192,14 @@ uninstall: manifests ## Uninstall CRDs from the K8s cluster specified in ~/.kube
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 deploy: manifests ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image gcr.io/k8s-staging-cluster-api/cluster-api-byoh-controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/cohesity/cluster-api-byoh-controller=${IMG}
+	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 publish-infra-yaml: # Generate infrastructure-components.yaml for the provider
-	cd config/manager && $(KUSTOMIZE) edit set image gcr.io/k8s-staging-cluster-api/cluster-api-byoh-controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/cohesity/cluster-api-byoh-controller=${IMG}
 	$(KUSTOMIZE) build config/default > infrastructure-components.yaml
 
 ##@ Dependencies
@@ -252,7 +252,7 @@ build-cluster-templates: $(RELEASE_DIR) cluster-templates
 
 
 build-infra-yaml: ## Generate infrastructure-components.yaml for the provider
-	cd config/manager && $(KUSTOMIZE) edit set image gcr.io/k8s-staging-cluster-api/cluster-api-byoh-controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/cohesity/cluster-api-byoh-controller=${IMG}
 	$(KUSTOMIZE) build config/default > $(RELEASE_DIR)/infrastructure-components.yaml
 
 build-metadata-yaml:
