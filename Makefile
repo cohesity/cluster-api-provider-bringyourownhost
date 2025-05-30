@@ -319,7 +319,6 @@ build-host-agent-binary: host-agent-binaries
 	cp bin/byoh-hostagent-linux-amd64 $(RELEASE_DIR)/byoh-hostagent-linux-amd64
 
 clean:
-	git reset --hard
 	git clean -xfd
 
 ##@ Dependencies

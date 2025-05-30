@@ -98,7 +98,7 @@ var _ = BeforeSuite(func() {
 	// This is required as in the envtest there is no default API
 	// to include RBAC. We are using a helper func parseK8sYaml to manually
 	// achieve this.
-	rbacDir := filepath.Join("..", "..", "..", "config", "rbac")
+	rbacDir := filepath.Join("..", "..", "..", "..", "config", "rbac")
 	files, err := os.ReadDir(rbacDir)
 	Expect(err).ShouldNot(HaveOccurred())
 	for _, f := range files {
