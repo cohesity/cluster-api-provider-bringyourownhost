@@ -335,10 +335,10 @@ func (r *HostReconciler) deleteEndpointIP(ctx context.Context, byoHost *infrastr
 	logger := ctrl.LoggerFrom(ctx)
 	logger.Info("Removing network endpoints")
 	if IP, ok := byoHost.Annotations[infrastructurev1beta1.EndPointIPAnnotation]; ok {
-		networks, err := vip.NewConfig(IP, registration.LocalHostRegistrar.ByoHostInfo.DefaultNetworkInterfaceName, false, "", false, 0, unix.RTN_UNICAST, unix.RTN_UNICAST, "", "", "")
+		networks, err := vip.NewConfig(IP, registration.LocalHostRegistrar.ByoHostInfo.DefaultNetworkInterfaceName, false, "", false, 0, unix.RTN_UNICAST, unix.RTN_UNICAST, "", "", "", false, nil)
 		if err == nil {
 			for _, network := range networks {
-				err := network.DeleteIP()
+				_, err := network.DeleteIP()
 				if err != nil {
 					return err
 				}
