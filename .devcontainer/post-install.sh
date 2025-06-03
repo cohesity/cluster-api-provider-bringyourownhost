@@ -22,8 +22,9 @@ apt-get update
 apt install direnv -y
 
 direnv allow
-echo 'eval "$(direnv hook bash)"' >> /home/vscode/.bashrc
-echo 'eval "$(direnv hook zsh)"' >> /home/vscode/.zshrc
+echo 'eval "$(direnv hook bash)"' >> /home/dev/.bashrc
+echo 'eval "$(direnv hook zsh)"' >> /home/dev/.zshrc
+sudo usermod -aG docker dev
 
 docker network create -d=bridge --subnet=172.19.0.0/24 kind
 

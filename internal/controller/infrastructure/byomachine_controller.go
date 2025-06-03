@@ -336,7 +336,7 @@ func (r *ByoMachineReconciler) SetupWithManager(c context.Context, mgr ctrl.Mana
 		).
 		Watches(&clusterv1.Cluster{},
 			handler.EnqueueRequestsFromMapFunc(ClusterToByoMachines),
-			builder.WithPredicates(predicates.ClusterUnpausedAndInfrastructureReady(ctrl.LoggerFrom(c))),
+			builder.WithPredicates(predicates.ClusterUnpausedAndInfrastructureReady(mgr.GetScheme(), ctrl.LoggerFrom(c))),
 		).
 		Named("infrastructure-byomachine").
 		Complete(r)
