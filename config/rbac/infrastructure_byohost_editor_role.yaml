@@ -31,3 +31,17 @@ rules:
   - byohosts/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  - byohosts
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch

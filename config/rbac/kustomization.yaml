@@ -46,6 +46,7 @@ resources:
 - infrastructure_byocluster_viewer_role.yaml
 - infrastructure_byohost_admin_role.yaml
 - infrastructure_byohost_editor_role.yaml
+- infrastructure_byohost_editor_clusterrolebinding.yaml
 - infrastructure_byohost_viewer_role.yaml
 - infrastructure_byomachine_admin_role.yaml
 - infrastructure_byomachine_editor_role.yaml

@@ -27,9 +27,13 @@ var _ = Describe("ByohostWebhook/Unit", func() {
 	err := infrastructurev1beta1.AddToScheme(schema)
 	Expect(err).NotTo(HaveOccurred())
 	decoder := admission.NewDecoder(schema)
-	v := &ByoHostCustomValidator{
+
+	validator := &ByoHostCustomValidator{
 		Decoder: decoder,
 	}
+	customValidatorHandler := admission.WithCustomValidator(schema, &infrastructurev1beta1.ByoHost{}, validator)
+	v := admission.MultiValidatingHandler(customValidatorHandler, validator)
+
 	Context("When ByoHost gets a create request", func() {
 		var (
 			byoHost    *infrastructurev1beta1.ByoHost
@@ -61,7 +65,7 @@ var _ = Describe("ByohostWebhook/Unit", func() {
 			}
 			resp := v.Handle(ctx, admission.Request{AdmissionRequest: admissionRequest})
 			Expect(resp.AdmissionResponse.Allowed).To(Equal(false))
-			Expect(string(resp.AdmissionResponse.Result.Reason)).To(Equal(fmt.Sprintf("%s is not a valid agent username", "unauthorized-user")))
+			Expect(string(resp.AdmissionResponse.Result.Message)).To(Equal(fmt.Sprintf("%s is not a valid agent username", "unauthorized-user")))
 		})
 		It("Should reject request from another agent user in the group", func(ctx SpecContext) {
 			admissionRequest := admissionv1.AdmissionRequest{
@@ -74,7 +78,7 @@ var _ = Describe("ByohostWebhook/Unit", func() {
 			}
 			resp := v.Handle(ctx, admission.Request{AdmissionRequest: admissionRequest})
 			Expect(resp.AdmissionResponse.Allowed).To(Equal(false))
-			Expect(string(resp.AdmissionResponse.Result.Reason)).To(Equal(fmt.Sprintf("%s cannot create/update resource %s", "byoh:host:host2", "host1")))
+			Expect(string(resp.AdmissionResponse.Result.Message)).To(Equal(fmt.Sprintf("%s cannot create/update resource %s", "byoh:host:host2", "host1")))
 		})
 		It("Should allow request from the valid agent user", func(ctx SpecContext) {
 			admissionRequest := admissionv1.AdmissionRequest{
@@ -118,16 +122,24 @@ var _ = Describe("ByohostWebhook/Unit", func() {
 					Raw:    byoHostRaw,
 					Object: byoHost,
 				},
+				OldObject: runtime.RawExtension{
+					Raw:    byoHostRaw,
+					Object: byoHost,
+				},
 			}
 			resp := v.Handle(ctx, admission.Request{AdmissionRequest: admissionRequest})
 			Expect(resp.AdmissionResponse.Allowed).To(Equal(false))
-			Expect(string(resp.AdmissionResponse.Result.Reason)).To(Equal(fmt.Sprintf("%s is not a valid agent username", "unauthorized-user")))
+			Expect(string(resp.AdmissionResponse.Result.Message)).To(Equal(fmt.Sprintf("%s is not a valid agent username", "unauthorized-user")))
 		})
 		It("Should allow update request from manager", func(ctx SpecContext) {
 			admissionRequest := admissionv1.AdmissionRequest{
 				Operation: admissionv1.Update,
 				UserInfo:  v1.UserInfo{Username: ManagerServiceAccount},
 				Object: runtime.RawExtension{
+					Raw:    byoHostRaw,
+					Object: byoHost,
+				},
+				OldObject: runtime.RawExtension{
 					Raw:    byoHostRaw,
 					Object: byoHost,
 				},
@@ -143,16 +155,24 @@ var _ = Describe("ByohostWebhook/Unit", func() {
 					Raw:    byoHostRaw,
 					Object: byoHost,
 				},
+				OldObject: runtime.RawExtension{
+					Raw:    byoHostRaw,
+					Object: byoHost,
+				},
 			}
 			resp := v.Handle(ctx, admission.Request{AdmissionRequest: admissionRequest})
 			Expect(resp.AdmissionResponse.Allowed).To(Equal(false))
-			Expect(string(resp.AdmissionResponse.Result.Reason)).To(Equal(fmt.Sprintf("%s cannot create/update resource %s", "byoh:host:host2", "host1")))
+			Expect(string(resp.AdmissionResponse.Result.Message)).To(Equal(fmt.Sprintf("%s cannot create/update resource %s", "byoh:host:host2", "host1")))
 		})
 		It("Should allow request from the valid agent user", func(ctx SpecContext) {
 			admissionRequest := admissionv1.AdmissionRequest{
 				Operation: admissionv1.Update,
 				UserInfo:  v1.UserInfo{Username: "byoh:host:host1"},
 				Object: runtime.RawExtension{
+					Raw:    byoHostRaw,
+					Object: byoHost,
+				},
+				OldObject: runtime.RawExtension{
 					Raw:    byoHostRaw,
 					Object: byoHost,
 				},
@@ -213,7 +233,7 @@ var _ = Describe("ByohostWebhook/Unit", func() {
 			}
 			resp := v.Handle(ctx, admission.Request{AdmissionRequest: admissionRequest})
 			Expect(resp.AdmissionResponse.Allowed).To(Equal(false))
-			Expect(string(resp.AdmissionResponse.Result.Reason)).To(Equal("cannot delete ByoHost when MachineRef is assigned"))
+			Expect(string(resp.AdmissionResponse.Result.Message)).To(Equal("cannot delete ByoHost when MachineRef is assigned"))
 		})
 	})
 })

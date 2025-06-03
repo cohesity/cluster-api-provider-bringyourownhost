@@ -9,6 +9,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-controller
+  IMAGE_TAG: ${{ github.ref_name }}
 
 jobs:
   build:
@@ -29,7 +30,8 @@ jobs:
         with:
           go-version: 1.24.3
 
-      - uses: bazel-contrib/setup-bazel@0.15.0
+      - name: Setup Bazel environment
+        uses: bazel-contrib/setup-bazel@0.15.0
         with:
           # Avoid downloading Bazel every time.
           bazelisk-cache: true
@@ -55,9 +57,6 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Build Release Artifacts
-        run: IMG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" make build-release-artifacts
-
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
@@ -73,6 +72,9 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+      - name: Build Release Artifacts
+        run: IMG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" make build-release-artifacts
 
       - name: Publish Release
         uses: softprops/action-gh-release@v1

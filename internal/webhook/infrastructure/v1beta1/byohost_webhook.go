@@ -36,9 +36,9 @@ func SetupByoHostWebhookWithManager(mgr ctrl.Manager) error {
 		Decoder: decoder,
 	}
 
-	customValidatorHandler := admission.WithCustomValidator(schema, &infrastructurev1beta1.ByoHost{}, validator).Handler
+	customValidatorHandler := admission.WithCustomValidator(schema, &infrastructurev1beta1.ByoHost{}, validator)
 
-	handler := admission.MultiValidatingHandler(validator, customValidatorHandler)
+	handler := admission.MultiValidatingHandler(customValidatorHandler, validator)
 
 	webhookHandler := &webhook.Admission{Handler: handler}
 
@@ -124,7 +124,7 @@ func (v *ByoHostCustomValidator) Handle(ctx context.Context, req admission.Reque
 	return response
 }
 
-func (v *ByoHostCustomValidator) handleCreateUpdateReq(ctx context.Context, req *admission.Request) admission.Response {
+func (v *ByoHostCustomValidator) handleCreateUpdateReq(_ context.Context, req *admission.Request) admission.Response {
 	byoHost := &infrastructurev1beta1.ByoHost{}
 
 	err := v.Decoder.Decode(*req, byoHost)

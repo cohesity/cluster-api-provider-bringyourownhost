@@ -102,19 +102,20 @@ var _ = BeforeSuite(func() {
 	files, err := os.ReadDir(rbacDir)
 	Expect(err).ShouldNot(HaveOccurred())
 	for _, f := range files {
+		if f.Name() == "kustomization.yaml" {
+			continue // skip kustomization.yaml
+		}
+
 		bytes, ferr := os.ReadFile(filepath.Join(rbacDir, f.Name()))
-		if ferr != nil {
-			fmt.Println(ferr)
-			continue
-		}
+		Expect(ferr).NotTo(HaveOccurred(), "Failed to read RBAC YAML file: %s", f.Name())
+		Expect(bytes).NotTo(BeEmpty(), "RBAC YAML file is empty: %s", f.Name())
 		obj := parseK8sYaml(bytes)
-		if len(obj) < 1 {
-			continue
-		}
-		err = k8sClient.Create(ctx, obj[0].(client.Object))
-		if err != nil {
-			continue
-		}
+		Expect(obj).NotTo(BeEmpty(), "Failed to parse RBAC YAML file: %s", f.Name())
+
+		cliObj := obj[0].(client.Object)
+		cliObj.SetNamespace("default") // Ensure the namespace is set to default
+		err = k8sClient.Create(ctx, cliObj)
+		Expect(err).NotTo(HaveOccurred(), "Failed to create RBAC object from file: %s", f.Name())
 	}
 
 	// start webhook server using Manager.
@@ -130,6 +131,24 @@ var _ = BeforeSuite(func() {
 		Metrics:        metricsserver.Options{BindAddress: "0"},
 	})
 	Expect(err).NotTo(HaveOccurred())
+
+	invalidUser, err := testEnv.ControlPlane.AddUser(envtest.User{
+		Name:   "test-user",
+		Groups: []string{"byoh:hosts"},
+	}, nil)
+	Expect(err).NotTo(HaveOccurred())
+	InvalidUserK8sClient, err = client.New(invalidUser.Config(), client.Options{Scheme: scheme.Scheme})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(InvalidUserK8sClient).NotTo(BeNil())
+
+	validUser, err := testEnv.ControlPlane.AddUser(envtest.User{
+		Name:   "byoh:host:host1",
+		Groups: []string{"byoh:hosts"},
+	}, nil)
+	Expect(err).NotTo(HaveOccurred())
+	ValidUserK8sClient, err = client.New(validUser.Config(), client.Options{Scheme: scheme.Scheme})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(ValidUserK8sClient).NotTo(BeNil())
 
 	err = SetupByoHostWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
@@ -202,7 +221,7 @@ func parseK8sYaml(fileR []byte) []runtime.Object {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, groupVersionKind, err := decode([]byte(f), nil, nil)
 		if err != nil {
-			fmt.Printf("Error while decoding YAML object")
+			fmt.Printf("Error while decoding YAML object: %v\n %s", err, f)
 			continue
 		}
 		if !acceptedK8sTypes.MatchString(groupVersionKind.Kind) {

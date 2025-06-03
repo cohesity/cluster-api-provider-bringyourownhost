@@ -98,7 +98,7 @@ var _ = Describe("ByoHost Webhook", func() {
 			It("should reject the request", func() {
 				err := ValidUserK8sClient.Delete(ctx, obj)
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("admission webhook \"vbyohost.kb.io\" denied the request: cannot delete ByoHost when MachineRef is assigned"))
+				Expect(err).To(MatchError("admission webhook \"vbyohost-v1beta1.kb.io\" denied the request: cannot delete ByoHost when MachineRef is assigned"))
 			})
 
 			AfterEach(func() {

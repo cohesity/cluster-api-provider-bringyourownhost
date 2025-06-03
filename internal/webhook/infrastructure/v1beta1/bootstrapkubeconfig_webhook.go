@@ -123,13 +123,13 @@ func validateAPIServer(r *infrastructurev1beta1.BootstrapKubeconfig) field.Error
 
 	if r.Spec.APIServer == "" {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("apiserver"), r.Spec.APIServer, "APIServer field cannot be empty"))
+		return allErrs
 	}
 
 	parsedURL, err := url.Parse(r.Spec.APIServer)
 	if err != nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("apiserver"), r.Spec.APIServer, "APIServer URL is not valid"))
-	}
-	if !isURLValid(parsedURL) {
+	} else if !isURLValid(parsedURL) {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("apiserver"), r.Spec.APIServer, "APIServer is not of the format https://hostname:port"))
 	}
 
