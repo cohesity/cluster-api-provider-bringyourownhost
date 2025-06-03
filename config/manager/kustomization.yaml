@@ -11,6 +11,6 @@ configMapGenerator:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- name: gcr.io/k8s-staging-cluster-api/cluster-api-byoh-controller
-  newName: gcr.io/k8s-staging-cluster-api/cluster-api-byoh-controller
+- name: ghcr.io/cohesity/cluster-api-provider-bringyourownhost-controller
+  newName: ghcr.io/cohesity/cluster-api-byoh-controller
   newTag: dev

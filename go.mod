@@ -22,7 +22,7 @@ require (
 	k8s.io/component-base v0.27.16
 	k8s.io/klog/v2 v2.90.1
 	k8s.io/kubectl v0.27.16
-	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
+	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	sigs.k8s.io/cluster-api v1.5.8
 	sigs.k8s.io/cluster-api/test v1.5.8
 	sigs.k8s.io/controller-runtime v0.15.3

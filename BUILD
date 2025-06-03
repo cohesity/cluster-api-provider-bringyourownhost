@@ -1,6 +1,6 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@rules_multirun//:defs.bzl", "command", "multirun")
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_multirun//:defs.bzl", "command", "multirun")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 """Targets in the repository root"""
