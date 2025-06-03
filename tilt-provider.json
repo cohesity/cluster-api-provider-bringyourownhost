@@ -1,7 +1,7 @@
 {
   "name": "byoh",
   "config": {
-    "image": "ghcr.io/cohesity/cluster-api-byoh-controller",
+    "image": "ghcr.io/cohesity/cluster-api-provider-bringyourownhost-controller",
     "label": "CAPB",
     "live_reload_deps": [
       "cmd/main.go",
