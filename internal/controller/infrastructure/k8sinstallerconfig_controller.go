@@ -14,10 +14,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/util"
+	capiutil "sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
@@ -29,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/util"
 )
 
 // K8sInstallerConfigReconciler reconciles a K8sInstallerConfig object
@@ -81,7 +81,7 @@ func (r *K8sInstallerConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Fetch the ByoMachine
-	byoMachine, err := GetOwnerByoMachine(ctx, r.Client, &config.ObjectMeta)
+	byoMachine, err := util.GetOwnerByoMachine(ctx, r.Client, &config.ObjectMeta)
 	if err != nil && !apierrors.IsNotFound(err) {
 		logger.Error(err, "failed to get Owner ByoMachine")
 		return ctrl.Result{}, err
@@ -118,7 +118,7 @@ func (r *K8sInstallerConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 	logger.Info("byoMachine found")
 
 	// Fetch the Cluster
-	cluster, err := util.GetClusterFromMetadata(ctx, r.Client, byoMachine.ObjectMeta)
+	cluster, err := capiutil.GetClusterFromMetadata(ctx, r.Client, byoMachine.ObjectMeta)
 	if err != nil {
 		logger.Error(err, "ByoMachine owner Machine is missing cluster label or cluster does not exist")
 		return ctrl.Result{}, err
@@ -185,7 +185,7 @@ func (r *K8sInstallerConfigReconciler) storeInstallationData(ctx context.Context
 					Kind:       scope.Config.Kind,
 					Name:       scope.Config.Name,
 					UID:        scope.Config.UID,
-					Controller: pointer.Bool(true),
+					Controller: ptr.To(true),
 				},
 			},
 		},
@@ -262,30 +262,6 @@ func (r *K8sInstallerConfigReconciler) reconcileDelete(ctx context.Context, scop
 	logger.Info("Deleting K8sInstallerConfig")
 	controllerutil.RemoveFinalizer(scope.Config, infrastructurev1beta1.K8sInstallerConfigFinalizer)
 	return reconcile.Result{}, nil
-}
-
-// GetOwnerByoMachine returns the ByoMachine object owning the current resource.
-func GetOwnerByoMachine(ctx context.Context, c client.Client, obj *metav1.ObjectMeta) (*infrastructurev1beta1.ByoMachine, error) {
-	for _, ref := range obj.OwnerReferences {
-		gv, err := schema.ParseGroupVersion(ref.APIVersion)
-		if err != nil {
-			return nil, err
-		}
-		if ref.Kind == "ByoMachine" && gv.Group == infrastructurev1beta1.GroupVersion.Group {
-			return GetByoMachineByName(ctx, c, obj.Namespace, ref.Name)
-		}
-	}
-	return nil, nil
-}
-
-// GetByoMachineByName finds and return a ByoMachine object using the specified params.
-func GetByoMachineByName(ctx context.Context, c client.Client, namespace, name string) (*infrastructurev1beta1.ByoMachine, error) {
-	m := &infrastructurev1beta1.ByoMachine{}
-	key := client.ObjectKey{Name: name, Namespace: namespace}
-	if err := c.Get(ctx, key, m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 // hasOwnerReferenceFrom will check if object have owner reference of the given owner
