@@ -91,6 +91,7 @@ var _ = Describe("ByoMachine Controller", func() {
 		It("should return error when cluster does not exist", func() {
 			machineForByoMachineWithoutCluster := builder.Machine(defaultNamespace, "machine-for-a-byomachine-without-cluster").
 				WithClusterName(defaultClusterName).
+				WithClusterVersion("v1.32.3").
 				Build()
 			Expect(k8sClientUncached.Create(ctx, machineForByoMachineWithoutCluster)).Should(Succeed())
 
@@ -528,6 +529,7 @@ var _ = Describe("ByoMachine Controller", func() {
 
 				pausedMachine := builder.Machine(defaultNamespace, "paused-machine").
 					WithClusterName(pausedCluster.Name).
+					WithClusterVersion("v1.32.3").
 					Build()
 				Expect(k8sClientUncached.Create(ctx, pausedMachine)).Should(Succeed())
 

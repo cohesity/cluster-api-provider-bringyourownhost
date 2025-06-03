@@ -234,7 +234,9 @@ func createClusterctlLocalRepository(config *clusterctl.E2EConfig, repositoryFol
 
 	// Ensuring a CNI file is defined in the config and register a FileTransformation to inject the referenced file in place of the CNI_RESOURCES envSubst variable.
 	Expect(config.Variables).To(HaveKey(CNIPath), "Missing %s variable in the config", CNIPath)
-	cniPath := config.GetVariable(CNIPath)
+
+	cniPath := config.GetVariableOrEmpty(CNIPath)
+	Expect(cniPath).ToNot(BeEmpty(), "The %s variable should not be empty", CNIPath)
 	Expect(cniPath).To(BeAnExistingFile(), "The %s variable should resolve to an existing file", CNIPath)
 
 	createRepositoryInput.RegisterClusterResourceSetConfigMapTransformation(cniPath, CNIResources)
@@ -248,12 +250,15 @@ func setupBootstrapCluster(config *clusterctl.E2EConfig, scheme *runtime.Scheme,
 	var clusterProvider bootstrap.ClusterProvider
 	kubeconfigPath := existingClusterKubeConfig
 	if !useExistingCluster {
+		ipFamily := config.GetVariableOrEmpty(IPFamily)
+		Expect(ipFamily).ToNot(BeEmpty(), "The %s variable should not be empty", IPFamily)
+
 		clusterProvider = bootstrap.CreateKindBootstrapClusterAndLoadImages(context.TODO(), bootstrap.CreateKindBootstrapClusterAndLoadImagesInput{
 			Name:               config.ManagementClusterName,
 			KubernetesVersion:  "v1.30.12",
 			RequiresDockerSock: config.HasDockerProvider(),
 			Images:             config.Images,
-			IPFamily:           config.GetVariable(IPFamily),
+			IPFamily:           ipFamily,
 		})
 		Expect(clusterProvider).NotTo(BeNil(), "Failed to create a bootstrap cluster")
 
@@ -318,8 +323,8 @@ func dumpSpecResourcesAndCleanup(ctx context.Context, specName string, clusterPr
 		// that cluster variable is not set even if the cluster exists, so we are calling DeleteAllClustersAndWait
 		// instead of DeleteClusterAndWait
 		framework.DeleteAllClustersAndWait(ctx, framework.DeleteAllClustersAndWaitInput{
-			Client:    clusterProxy.GetClient(),
-			Namespace: namespace.Name,
+			ClusterProxy: clusterProxy,
+			Namespace:    namespace.Name,
 		}, intervalsGetter(specName, "wait-delete-cluster")...)
 
 		Byf("Deleting namespace used for hosting the %q test spec", specName)

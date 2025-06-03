@@ -100,6 +100,9 @@ var _ = Describe("When testing MachineDeployment scale out/in", func() {
 
 		By("creating a workload cluster with one control plane node and one worker node")
 
+		k8sVersion := e2eConfig.GetVariableOrEmpty(KubernetesVersion)
+		Expect(k8sVersion).NotTo(BeEmpty(), "The %s variable should not be empty", KubernetesVersion)
+
 		setControlPlaneIP(context.Background(), dockerClient)
 		clusterctl.ApplyClusterTemplateAndWait(ctx, clusterctl.ApplyClusterTemplateAndWaitInput{
 			ClusterProxy: bootstrapClusterProxy,
@@ -111,7 +114,7 @@ var _ = Describe("When testing MachineDeployment scale out/in", func() {
 				Flavor:                   clusterctl.DefaultFlavor,
 				Namespace:                namespace.Name,
 				ClusterName:              clusterName,
-				KubernetesVersion:        e2eConfig.GetVariable(KubernetesVersion),
+				KubernetesVersion:        k8sVersion,
 				ControlPlaneMachineCount: pointer.Int64(3),
 				WorkerMachineCount:       pointer.Int64(1),
 			},

@@ -117,6 +117,9 @@ var _ = Describe("When BYO Host rejoins the capacity pool", func() {
 		By("Creating a cluster")
 
 		setControlPlaneIP(context.Background(), dockerClient)
+		k8sVersion := e2eConfig.GetVariableOrEmpty(KubernetesVersion)
+		Expect(k8sVersion).NotTo(BeEmpty(), "Kubernetes version must be specified in the e2e config for %s spec", specName)
+
 		clusterctl.ApplyClusterTemplateAndWait(ctx, clusterctl.ApplyClusterTemplateAndWaitInput{
 			ClusterProxy: bootstrapClusterProxy,
 			ConfigCluster: clusterctl.ConfigClusterInput{
@@ -127,7 +130,7 @@ var _ = Describe("When BYO Host rejoins the capacity pool", func() {
 				Flavor:                   clusterctl.DefaultFlavor,
 				Namespace:                namespace.Name,
 				ClusterName:              clusterName,
-				KubernetesVersion:        e2eConfig.GetVariable(KubernetesVersion),
+				KubernetesVersion:        k8sVersion,
 				ControlPlaneMachineCount: pointer.Int64(1),
 				WorkerMachineCount:       pointer.Int64(1),
 			},
@@ -146,8 +149,8 @@ var _ = Describe("When BYO Host rejoins the capacity pool", func() {
 
 		By("Delete the cluster and freeing the ByoHosts")
 		framework.DeleteAllClustersAndWait(ctx, framework.DeleteAllClustersAndWaitInput{
-			Client:    bootstrapClusterProxy.GetClient(),
-			Namespace: namespace.Name,
+			ClusterProxy: bootstrapClusterProxy,
+			Namespace:    namespace.Name,
 		}, e2eConfig.GetIntervals(specName, "wait-delete-cluster")...)
 
 		// Assert if cluster label is removed
@@ -160,6 +163,9 @@ var _ = Describe("When BYO Host rejoins the capacity pool", func() {
 		By("Creating a new cluster")
 		clusterName = fmt.Sprintf("%s-%s", specName, util.RandomString(6))
 
+		k8sVersion = e2eConfig.GetVariableOrEmpty(KubernetesVersion)
+		Expect(k8sVersion).NotTo(BeEmpty(), "The %s variable should not be empty", KubernetesVersion)
+
 		clusterctl.ApplyClusterTemplateAndWait(ctx, clusterctl.ApplyClusterTemplateAndWaitInput{
 			ClusterProxy: bootstrapClusterProxy,
 			ConfigCluster: clusterctl.ConfigClusterInput{
@@ -170,7 +176,7 @@ var _ = Describe("When BYO Host rejoins the capacity pool", func() {
 				Flavor:                   clusterctl.DefaultFlavor,
 				Namespace:                namespace.Name,
 				ClusterName:              clusterName,
-				KubernetesVersion:        e2eConfig.GetVariable(KubernetesVersion),
+				KubernetesVersion:        k8sVersion,
 				ControlPlaneMachineCount: pointer.Int64(1),
 				WorkerMachineCount:       pointer.Int64(1),
 			},

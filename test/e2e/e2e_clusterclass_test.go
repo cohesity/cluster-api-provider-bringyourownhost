@@ -113,6 +113,10 @@ var _ = Describe("When BYOH joins existing cluster [Cluster-Class]", func() {
 		}()
 
 		setControlPlaneIP(context.Background(), dockerClient)
+
+		k8sVersion := e2eConfig.GetVariableOrEmpty(KubernetesVersion)
+		Expect(k8sVersion).NotTo(BeEmpty(), "The %s variable should not be empty", KubernetesVersion)
+
 		clusterctl.ApplyClusterTemplateAndWait(ctx, clusterctl.ApplyClusterTemplateAndWaitInput{
 			ClusterProxy: bootstrapClusterProxy,
 			ConfigCluster: clusterctl.ConfigClusterInput{
@@ -123,7 +127,7 @@ var _ = Describe("When BYOH joins existing cluster [Cluster-Class]", func() {
 				Flavor:                   "topology",
 				Namespace:                namespace.Name,
 				ClusterName:              clusterName,
-				KubernetesVersion:        e2eConfig.GetVariable(KubernetesVersion),
+				KubernetesVersion:        k8sVersion,
 				ControlPlaneMachineCount: pointer.Int64(1),
 				WorkerMachineCount:       pointer.Int64(1),
 			},
