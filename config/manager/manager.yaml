@@ -31,7 +31,7 @@ spec:
         args:
         - --enable-leader-election
         - "--metrics-bind-addr=127.0.0.1:8080"
-        image: ghcr.io/cohesity/cluster-api-byoh-controller:latest
+        image: ghcr.io/cohesity/cluster-api-provider-bringyourownhost-controller:latest
         name: manager
         resources:
           limits:

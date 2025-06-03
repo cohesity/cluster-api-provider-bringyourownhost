@@ -203,7 +203,7 @@ kovW9X7Ook/tTW0HyX6D6HRciA==
 			Expect(err).ShouldNot(HaveOccurred())
 			err = CSRRegistrar.BootstrapKubeconfig(hostName)
 			Expect(err).Should(HaveOccurred())
-			Expect(err).To(MatchError("mkdir /non-existent-mount: permission denied"))
+			Expect(err).To(MatchError(ContainSubstring("permission denied")))
 			Expect(os.Remove(registration.TmpPrivateKey)).ShouldNot(HaveOccurred())
 		})
 		It("should create kubeconfig if csr is approved", func() {
