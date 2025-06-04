@@ -1,131 +1,153 @@
 # golangci.com configuration
-# https://github.com/golangci/golangci/wiki/Configuration
-service:
-  golangci-lint-version: 1.50.0 # use the fixed version to not introduce new linters unexpectedly
-
+# https://golangci-lint.run/usage/configuration/
+version: "2"
 run:
-  skip-dirs:
-    - ".*fakes/"
-  skip-files:
-    - ".*dummy.go"
+  allow-parallel-runners: true
   timeout: 10m
-
 linters:
-  disable-all: true
+  default: none
   enable:
     - bodyclose
     - depguard
     - dogsled
+    - copyloopvar
     - dupl
     - dupword
     - errcheck
+    - err113
     - funlen
+    - ginkgolinter
     - goconst
     - gocritic
     - gocyclo
     - goheader
-#    - goimports
-    - gomnd
+    - mnd
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - ineffassign
+    - lll
     - misspell
     - nakedret
     - noctx
     # - nolintlint
     - rowserrcheck
+    - prealloc
+    - revive
+    - sloglint
     - staticcheck
-    - stylecheck
     - testpackage
-    - typecheck
     - unconvert
-#    - unparam
+    - unparam
     - unused
     - whitespace
+    - wrapcheck
 
   # don't enable:
-  # - asciicheck
-  # - exhaustive
-  # - gochecknoinits
-  # - gochecknoglobals
-  # - gocognit
-  # - godot
-  # - godox
-  # - goerr113
-  # - interfacer
-  # - lll
-  # - nestif
-  # - prealloc
-  # - revive
-  # - scopelint
-  # - wsl
-
-linters-settings:
-  dupl:
-    threshold: 100
-  funlen:
-    lines: 100
-    statements: 50
-  goheader:
-    values:
-      const:
-        COMPANY: VMware, Inc.
-        LICENSE: Apache-2.0
-      regexp:
-        YEAR: 20\d*-*\d*
-    template: |-
-      Copyright {{ YEAR }} {{ COMPANY }} All Rights Reserved.
-      SPDX-License-Identifier: {{ LICENSE }}
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-      - wrapperFunc
-  gocyclo:
-    min-complexity: 15
-  goimports:
-    local-prefixes: github.com/cohesity
-  gomnd:
-    settings:
-      mnd:
-        checks:
+  disable:
+    - asciicheck
+    - exhaustive
+    - gochecknoinits
+    - gochecknoglobals
+    - gocognit
+    - godot
+    - godox
+    - lll
+    - nestif
+    - prealloc
+    - revive
+    - wsl
+  settings:
+    dupl:
+      threshold: 100
+    funlen:
+      lines: 100
+      statements: 50
+    goheader:
+      values:
+        const:
+          COMPANY: Cohesity, Inc.
+          LICENSE: Apache-2.0
+        regexp:
+          YEAR: 20\d*-*\d*
+      template: |-
+        Copyright {{ YEAR }} {{ COMPANY }} All Rights Reserved.
+        SPDX-License-Identifier: {{ LICENSE }}
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        - dupImport # https://github.com/go-critic/go-critic/issues/845
+        - ifElseChain
+        - octalLiteral
+        - whyNoLint
+        - wrapperFunc
+    gocyclo:
+      min-complexity: 15
+    mnd:
+      checks:
         - argument
         - case
         - condition
         - return
-        ignored-functions:
+      ignored-functions:
         - log.*
-  govet:
-    check-shadowing: true
-  misspell:
-    locale: US
-  nolintlint:
-    allow-leading-space: true # don't require machine-readable nolint directives (i.e. with no leading space)
-    allow-unused: false # report any unused nolint directives
-    require-explanation: false # don't require an explanation for nolint directives
-    require-specific: false # don't require nolint directives to be specific about which linter is being skipped
-  whitespace:
-    multi-func: true
-  gofmt:
-    # simplify code: gofmt with `-s` option, true by default
-    simplify: true
+    misspell:
+      locale: US
+    nolintlint:
+      allow-unused: false # report any unused nolint directives
+      require-explanation: false # don't require an explanation for nolint directives
+      require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+    whitespace:
+      multi-func: true
+    revive:
+      rules:
+        - name: comment-spacings
+        - name: import-shadowing
+  exclusions:
+    generated: lax
+    rules:
+      - path: api/*
+        linters:
+          - lll
+      - path: internal/*
+        linters:
+          - dupl
+          - lll
+      - path: _test\.go
+        linters:
+          - dupl
+          - gosec
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gofumpt
+  settings:
+    gofmt:
+      # simplify code: gofmt with `-s` option, true by default
+      simplify: true
+    goimports:
+      local-prefixes:
+        - github.com/cohesity
+    gofumpt:
+      extra-rules: false # don't enable extra rules, which are not in gofumpt by default
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-rules:
-    # Exclude some linters from running on tests files.
-    - path: _test\.go
-      linters:
-        - dupl
-        - gosec
+  new: true
