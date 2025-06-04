@@ -15,9 +15,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.6
 	golang.org/x/sys v0.33.0
-	k8s.io/api v0.32.5
-	k8s.io/apimachinery v0.32.5
-	k8s.io/client-go v0.32.5
+	k8s.io/api v0.33.1
+	k8s.io/apimachinery v0.33.1
+	k8s.io/client-go v0.33.1
 	k8s.io/cluster-bootstrap v0.32.5
 	k8s.io/component-base v0.32.5
 	k8s.io/klog/v2 v2.130.1
@@ -86,7 +86,6 @@ require (
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/cel-go v0.22.0 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
