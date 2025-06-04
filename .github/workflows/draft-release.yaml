@@ -40,11 +40,11 @@ jobs:
           # Share repository cache between workflows.
           repository-cache: true
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+      - name: LLogin to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # This step uses docker/metadata-action to extract tags and labels that will be applied to the specified image.
