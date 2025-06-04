@@ -21,7 +21,7 @@ jobs:
       actions: read
     steps:
       - name: Clone the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Go
         uses: actions/setup-go@v5
