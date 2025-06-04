@@ -2,8 +2,6 @@ module github.com/cohesity/cluster-api-provider-bringyourownhost
 
 go 1.24.3
 
-// replace github.com/insomniacslk/dhcp => github.com/harvester/dhcp v0.0.0-20220421024905-28b38eafefe3
-
 require (
 	github.com/docker/cli v27.1.1+incompatible
 	github.com/docker/docker v27.1.1+incompatible
