@@ -1,29 +1,29 @@
 area/docs:
-- "docs/**/*"
-- "**/*.md"
+  - "docs/**/*"
+  - "**/*.md"
 
 area/installer:
-- "agent-installer/**/*"
+  - "agent-installer/**/*"
 
 area/api:
-- "api/*"
-- "api/**/*"
+  - "api/*"
+  - "api/**/*"
 
 area/test-release:
-- "hack/**/*"
-- "test/**/*"
-- "go.mod"
-- "Makefile"
+  - "hack/**/*"
+  - "test/**/*"
+  - "go.mod"
+  - "Makefile"
 
 area:
-- "api"
-- "docs"
-- "test-release"
-- "installer"
+  - "api"
+  - "docs"
+  - "test-release"
+  - "installer"
 
 kind:
-- "bug"
-- "feature"
-- "cleanup"
-- "docs"
-- "test-release"
+  - "bug"
+  - "feature"
+  - "cleanup"
+  - "docs"
+  - "test-release"

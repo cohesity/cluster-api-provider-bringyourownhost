@@ -4,28 +4,30 @@
 name: Weekly Tag
 
 on:
-    schedule:
-      # Mondays at 5am UTC / midnight EST
-      - cron: '0 5 * * 1'
+  schedule:
+    # Mondays at 5am UTC / midnight EST
+    - cron: "0 5 * * 1"
 
 # We need contents write permission to create a tag.
 # See https://docs.github.com/en/rest/authentication/permissions-required-for-github-apps?apiVersion=2022-11-28#repository-permissions-for-actions
 permissions:
-  contents:
-    write
+  contents: write
 
 jobs:
   tagger:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
     steps:
-    - name: tag HEAD with [year].[week number]
-      run: |
-        curl --request POST \
-            --url https://api.github.com/repos/${{ github.repository }}/git/refs \
-            --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-            --data @- << EOF
-        {
-            "ref": "refs/tags/$(date +%Y.%V)",
-            "sha": "${{ github.sha }}"
-        }
-        EOF
+      - name: tag HEAD with [year].[week number]
+        run: |
+          curl --request POST \
+              --url https://api.github.com/repos/${{ github.repository }}/git/refs \
+              --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+              --data @- << EOF
+          {
+              "ref": "refs/tags/$(date +%Y.%V)",
+              "sha": "${{ github.sha }}"
+          }
+          EOF

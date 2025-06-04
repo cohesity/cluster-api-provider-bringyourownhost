@@ -7,10 +7,14 @@ on:
 
 jobs:
   triage:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
     steps:
       - name: Label pull requests based on the file paths
-        uses: actions/labeler@v3
+        uses: actions/labeler@v5
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           configuration-path: .github/labeler.yaml
