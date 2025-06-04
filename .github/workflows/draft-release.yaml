@@ -23,12 +23,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.24.3
+          go-version-file: './go.mod'
 
       - name: Setup Bazel environment
         uses: bazel-contrib/setup-bazel@0.15.0
@@ -75,9 +75,38 @@ jobs:
       - name: Build Release Artifacts
         run: IMG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" make build-release-artifacts
 
+      # ========================================================
+      # Add a step to generate the provenance subjects as shown below.
+      # Update the sha256 sum arguments to include all binaries that you generate provenance for.
+      # ========================================================
+      - name: Generate subject for provenance
+        id: hash
+        run: |
+          set -euo pipefail
+
+          # List the artifacts the provenance will refer to.
+          files=$(ls _dist/*)
+          # Generate the subjects (base64 encoded).
+          echo "hashes=$(sha256sum $files | base64 -w0)" >> "${GITHUB_OUTPUT}"
+
+  provenance:
+    needs: [build]
+    permissions:
+      actions: read # To read the workflow path.
+      id-token: write # To sign the provenance.
+      contents: write # To add assets to a release.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.4.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.digests }}"
+      upload-assets: true # Optional: Upload to a new release
+
+  release:
+    needs: [build, provenance]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
       - name: Publish Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2.2.2
         with:
           draft: true
           generate_release_notes: true
