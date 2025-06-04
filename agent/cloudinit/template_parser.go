@@ -15,7 +15,7 @@ type ITemplateParser interface {
 
 // TemplateParser cloudinit templates parsing using ITemplateParser
 type TemplateParser struct {
-	Template interface{}
+	Template any
 }
 
 // ParseTemplate parses and returns the parsed template content

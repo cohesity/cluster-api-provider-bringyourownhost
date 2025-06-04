@@ -67,7 +67,7 @@ func WriteDockerLog(output types.HijackedResponse, outputFile string) *os.File {
 }
 
 // Showf prints formatted string to stdout
-func Showf(format string, a ...interface{}) {
+func Showf(format string, a ...any) {
 	fmt.Printf(format, a...)
 	fmt.Printf("\n")
 }

@@ -464,7 +464,7 @@ func (r *ByoMachineReconciler) setInstallationSecretForByoHost(ctx context.Conte
 		return ctrl.Result{}, fmt.Errorf("installation secret not set on ready installerconfig %s %s", installerConfig.GetKind(), installerConfig.GetName())
 	}
 	secretRef := &corev1.ObjectReference{}
-	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(secret.(map[string]interface{}), secretRef); err != nil {
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(secret.(map[string]any), secretRef); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to convert unstructured field, %s", err.Error())
 	}
 	machineScope.ByoHost.Spec.InstallationSecret = secretRef

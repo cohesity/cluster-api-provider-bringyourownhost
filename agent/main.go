@@ -59,7 +59,7 @@ func (l *labelFlags) String() string {
 func (l *labelFlags) Set(value string) error {
 	// account for comma-separated key-value pairs in a single invocation
 	if len(strings.Split(value, ",")) > 1 {
-		for _, s := range strings.Split(value, ",") {
+		for s := range strings.SplitSeq(value, ",") {
 			if s == "" {
 				continue
 			}

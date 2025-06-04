@@ -132,7 +132,7 @@ func (bcsr *ByohCSR) RequestBYOHClientCert(hostname string) (string, types.UID, 
 	return reqName, reqUID, nil
 }
 
-func generateCSR(hostname string, privKey interface{}) ([]byte, error) {
+func generateCSR(hostname string, privKey any) ([]byte, error) {
 	// Generate a new *x509.CertificateRequest template
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{

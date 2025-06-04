@@ -61,7 +61,7 @@ var _ = Describe("Cluster upgrade test [K8s-upgrade]", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Creating byohost capacity pool containing 4 docker hosts")
-		for i := 0; i < byoHostCapacityPool; i++ {
+		for i := range byoHostCapacityPool {
 
 			byoHostName = fmt.Sprintf("byohost-%s", util.RandomString(6))
 

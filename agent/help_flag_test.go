@@ -38,7 +38,7 @@ var _ = Describe("Help flag for host agent", func() {
 			Eventually(session, "5s").Should(gexec.Exit())
 
 			output := string(session.Err.Contents())
-			for _, line := range strings.Split(strings.TrimRight(output, "\n"), "\n") {
+			for line := range strings.SplitSeq(strings.TrimRight(output, "\n"), "\n") {
 				line = strings.TrimSpace(line)
 				if !strings.HasPrefix(line, "-") {
 					continue

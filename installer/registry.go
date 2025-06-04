@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	osk8sInstaller     interface{}
+	osk8sInstaller     any
 	k8sInstallerMap    map[string]osk8sInstaller
 	osk8sInstallerMap  map[string]k8sInstallerMap
 	filterOsBundlePair struct {
@@ -43,7 +43,7 @@ func newRegistry() registry {
 
 // AddBundleInstaller adds a bundle installer to the registry
 func (r *registry) AddBundleInstaller(os, k8sVer string) {
-	var empty interface{}
+	var empty any
 
 	if _, ok := r.osk8sInstallerMap[os]; !ok {
 		r.osk8sInstallerMap[os] = make(k8sInstallerMap)

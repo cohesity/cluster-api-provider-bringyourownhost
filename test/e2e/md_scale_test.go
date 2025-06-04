@@ -58,7 +58,7 @@ var _ = Describe("When testing MachineDeployment scale out/in", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Creating byohost capacity pool containing 5 hosts")
-		for i := 0; i < byoHostCapacityPool; i++ {
+		for i := range byoHostCapacityPool {
 
 			byoHostName = fmt.Sprintf("byohost-%s", util.RandomString(6))
 
