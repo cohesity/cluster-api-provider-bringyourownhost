@@ -11,7 +11,7 @@ metadata:
   labels:
     app.kubernetes.io/name: byoh
     app.kubernetes.io/managed-by: kustomize
-  name: infrastructure-byocluster-editor-role
+  name: byocluster-editor-role
 rules:
 - apiGroups:
   - infrastructure.cluster.x-k8s.io
