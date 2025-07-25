@@ -11,7 +11,7 @@ metadata:
   labels:
     app.kubernetes.io/name: byoh
     app.kubernetes.io/managed-by: kustomize
-  name: infrastructure-k8sinstallerconfigtemplate-editor-role
+  name: k8sinstallerconfigtemplate-editor-role
 rules:
 - apiGroups:
   - infrastructure.cluster.x-k8s.io
