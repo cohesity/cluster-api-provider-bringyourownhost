@@ -167,7 +167,7 @@ func (r *HostReconciler) executeInstallerController(ctx context.Context, byoHost
 	if err != nil {
 		return err
 	}
-	logger.Info("executing install script")
+	logger.Info("executing install script on byohost", "name", byoHost.Name)
 	err = r.CmdRunner.RunCmd(ctx, installScript)
 	if err != nil {
 		logger.Error(err, "error executing installation script")
@@ -175,6 +175,7 @@ func (r *HostReconciler) executeInstallerController(ctx context.Context, byoHost
 		conditions.MarkFalse(byoHost, infrastructurev1beta1.K8sComponentsInstallationSucceeded, infrastructurev1beta1.K8sComponentsInstallationFailedReason, clusterv1.ConditionSeverityInfo, "")
 		return err
 	}
+	logger.Info("Successfully executed install script on byohost", "name", byoHost.Name)
 	return nil
 }
 
