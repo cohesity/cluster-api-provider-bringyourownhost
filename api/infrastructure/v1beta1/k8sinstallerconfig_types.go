@@ -20,6 +20,8 @@ const (
 // K8sInstallerConfigSpec defines the desired state of K8sInstallerConfig.
 type K8sInstallerConfigSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
 	// BundleRepo is the OCI registry from which the carvel imgpkg bundle will be downloaded
 	BundleRepo string `json:"bundleRepo"`
@@ -46,11 +48,19 @@ type K8sInstallerConfigStatus struct {
 
 // K8sInstallerConfig is the Schema for the k8sinstallerconfigs API.
 type K8sInstallerConfig struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   K8sInstallerConfigSpec   `json:"spec,omitempty"`
-	Status K8sInstallerConfigStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of K8sInstallerConfig
+	// +required
+	Spec K8sInstallerConfigSpec `json:"spec"`
+
+	// status defines the observed state of K8sInstallerConfig
+	// +optional
+	Status K8sInstallerConfigStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true

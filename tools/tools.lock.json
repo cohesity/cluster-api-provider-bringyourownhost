@@ -4,29 +4,29 @@
     "binaries": [
       {
         "kind": "file",
-        "url": "https://github.com/bufbuild/buf/releases/download/v1.42.0/buf-Linux-aarch64",
-        "sha256": "93594cad4b59ca02518b2ba56ade689b473c2db0e81e51391542c5ae535ffe2a",
+        "url": "https://github.com/bufbuild/buf/releases/download/v1.57.0/buf-Linux-aarch64",
+        "sha256": "e8c908668033d0f806c564af5df3c5756236bcf834f7afb08138cfc01db60ed9",
         "os": "linux",
         "cpu": "arm64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/bufbuild/buf/releases/download/v1.42.0/buf-Linux-x86_64",
-        "sha256": "e0904dab0767db8e753ecfc40a84e5fc7aaec33b4d6734f6de1fc89ac54bf3c3",
+        "url": "https://github.com/bufbuild/buf/releases/download/v1.57.0/buf-Linux-x86_64",
+        "sha256": "2fa1a660de1d94eb975e49b89ef9ab5c2f9f58d26da518eecec22375351180a7",
         "os": "linux",
         "cpu": "x86_64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/bufbuild/buf/releases/download/v1.42.0/buf-Darwin-arm64",
-        "sha256": "3d162b2e8c0b579ca64f3d83612b533d45493366fb64656dd7ecfacc3f0e8b90",
+        "url": "https://github.com/bufbuild/buf/releases/download/v1.57.0/buf-Darwin-arm64",
+        "sha256": "ca6fd82b0435942f3ee052ea9e4e698cdbc0b2d53daf6c51c0d741bed543aa18",
         "os": "macos",
         "cpu": "arm64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/bufbuild/buf/releases/download/v1.42.0/buf-Darwin-x86_64",
-        "sha256": "f42d0cfb24694e17f8fa7d51581d3af8848363ca451d6dd2739bd85dbd2e8dc0",
+        "url": "https://github.com/bufbuild/buf/releases/download/v1.57.0/buf-Darwin-x86_64",
+        "sha256": "16933004578c20a3176a9d6678f3b5fe5e71176455b2dd37993aae130af08ded",
         "os": "macos",
         "cpu": "x86_64"
       }
@@ -36,29 +36,29 @@
     "binaries": [
       {
         "kind": "file",
-        "url": "https://github.com/bazelbuild/buildtools/releases/download/v7.3.1/buildozer-linux-arm64",
-        "sha256": "0b5a2a717ac4fc911e1fec8d92af71dbb4fe95b10e5213da0cc3d56cea64a328",
+        "url": "https://github.com/bazelbuild/buildtools/releases/download/v8.2.1/buildozer-linux-arm64",
+        "sha256": "e55b56861a390cc993402d2974d5b74a097694f64eb08599dc704bdd7dde6484",
         "os": "linux",
         "cpu": "arm64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/bazelbuild/buildtools/releases/download/v7.3.1/buildozer-linux-amd64",
-        "sha256": "3305e287b3fcc68b9a35fd8515ee617452cd4e018f9e6886b6c7cdbcba8710d4",
+        "url": "https://github.com/bazelbuild/buildtools/releases/download/v8.2.1/buildozer-linux-amd64",
+        "sha256": "04454a6a89c64c603027cc3371eb1c36e48727e04558e077c20ec37c9c2f831a",
         "os": "linux",
         "cpu": "x86_64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/bazelbuild/buildtools/releases/download/v7.3.1/buildozer-darwin-arm64",
-        "sha256": "31b1bfe20d7d5444be217af78f94c5c43799cdf847c6ce69794b7bf3319c5364",
+        "url": "https://github.com/bazelbuild/buildtools/releases/download/v8.2.1/buildozer-darwin-arm64",
+        "sha256": "a981182561f67ed697b0e810714307c8475bce68c069f819212fe36f12d77872",
         "os": "macos",
         "cpu": "arm64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/bazelbuild/buildtools/releases/download/v7.3.1/buildozer-darwin-amd64",
-        "sha256": "854c9583efc166602276802658cef3f224d60898cfaa60630b33d328db3b0de2",
+        "url": "https://github.com/bazelbuild/buildtools/releases/download/v8.2.1/buildozer-darwin-amd64",
+        "sha256": "1284b7416d9ebbb50033645fc648985f9b2e0f38e7f22f79c0398c97d38d146c",
         "os": "macos",
         "cpu": "x86_64"
       }
@@ -68,22 +68,22 @@
     "binaries": [
       {
         "kind": "file",
-        "url": "https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-aarch64",
-        "sha256": "6e9fbd5daa20dca5d7d89145081ae8155d68ef2928b497d9f85b54fe0f9dbb2c",
+        "url": "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-aarch64",
+        "sha256": "54488fffb60782f3c8787a48b95ed15f49f5a3a85f4105304bd46db5edd9db61",
         "os": "linux",
         "cpu": "arm64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64",
-        "sha256": "383ce6698cd5d5bbf958d2c8489ed75094e34a77d340404d9f32c4ae9e12baf0",
+        "url": "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-linux-x86_64",
+        "sha256": "a55a8cd4ef103aac282812554e531aac8df7e914a287ee81e14d695556a22902",
         "os": "linux",
         "cpu": "x86_64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-darwin-aarch64",
-        "sha256": "12280cff0940035e1850b475e4972bcded09307a305a0b126ec70a3e6203ed34",
+        "url": "https://github.com/docker/compose/releases/download/v2.39.2/docker-compose-darwin-aarch64",
+        "sha256": "44ea135a29b176d959aed927d61d3483b3f0e7b4a2025ab7812aa00086916f13",
         "os": "macos",
         "cpu": "arm64"
       }
@@ -93,9 +93,9 @@
     "binaries": [
       {
         "kind": "file",
-        "url": "https://github.com/alexeagle/gazelle-prebuilt/releases/download/2025.26.30+f33bce6/gazelle-darwin_arm64_cgo",
-        "sha256": "4aa9a4eff3b4e09762f2d471a0d469696b821a6523b3d06f004b68021746c1d4",
-        "os": "macos",
+        "url": "https://github.com/alexeagle/gazelle-prebuilt/releases/download/2025.26.30+f33bce6/gazelle-linux_arm64_cgo",
+        "sha256": "04932db0357fe60401112885d57c079581f1ba2c7aa01bf2d4ad5a8c8c406208",
+        "os": "linux",
         "cpu": "arm64"
       },
       {
@@ -107,9 +107,9 @@
       },
       {
         "kind": "file",
-        "url": "https://github.com/alexeagle/gazelle-prebuilt/releases/download/2025.26.30+f33bce6/gazelle-linux_arm64_cgo",
-        "sha256": "04932db0357fe60401112885d57c079581f1ba2c7aa01bf2d4ad5a8c8c406208",
-        "os": "linux",
+        "url": "https://github.com/alexeagle/gazelle-prebuilt/releases/download/2025.26.30+f33bce6/gazelle-darwin_arm64_cgo",
+        "sha256": "4aa9a4eff3b4e09762f2d471a0d469696b821a6523b3d06f004b68021746c1d4",
+        "os": "macos",
         "cpu": "arm64"
       }
     ]
@@ -118,22 +118,47 @@
     "binaries": [
       {
         "kind": "file",
-        "url": "https://github.com/bazelbuild/bazel-watcher/releases/download/v0.25.3/ibazel_linux_arm64",
-        "sha256": "3fa76bef2a1eac55975a0e6949c133d0a9898eb1e5425ce4f7df0289859f56c5",
+        "url": "https://github.com/bazelbuild/bazel-watcher/releases/download/v0.26.10/ibazel_linux_arm64",
+        "sha256": "c535714662b8704a3ae55cd5b3cdf6c1939f5ba6ba82eb96cdac54b75ac28ffa",
         "os": "linux",
         "cpu": "arm64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/bazelbuild/bazel-watcher/releases/download/v0.25.3/ibazel_linux_amd64",
-        "sha256": "d8e1ea02777670a095719ed3800e9bbf814269b05edf901992c1e7c5eca0e3b6",
+        "url": "https://github.com/bazelbuild/bazel-watcher/releases/download/v0.26.10/ibazel_linux_amd64",
+        "sha256": "83e7f76cbcbc721dc544b88edc25edc777faa8b95475a301d4d01fb6bed54b00",
         "os": "linux",
         "cpu": "x86_64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/bazelbuild/bazel-watcher/releases/download/v0.25.3/ibazel_darwin_arm64",
-        "sha256": "c2da75cbab7a4b2b97ba534653bb12e4dd731157bb1c9d660f79df3b330a7239",
+        "url": "https://github.com/bazelbuild/bazel-watcher/releases/download/v0.26.10/ibazel_darwin_arm64",
+        "sha256": "3e3e609e3447204289b36c0f279f4d155e583f3289eb1ff9dcb92eae8c3fc505",
+        "os": "macos",
+        "cpu": "arm64"
+      }
+    ]
+  },
+  "kubebuilder": {
+    "binaries": [
+      {
+        "kind": "file",
+        "url": "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v4.8.0/kubebuilder_linux_arm64",
+        "sha256": "9b6b5e37c84600a387396a5635badcc59cbc3b8ed3ae5f17b1fcabec0a7b61ed",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v4.8.0/kubebuilder_linux_amd64",
+        "sha256": "4f784e52845db48320cd37b579ae331149a8a61a2e13ed04230034c97a017897",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v4.8.0/kubebuilder_darwin_arm64",
+        "sha256": "4719a3e0ea3a1fac9718b49e8deb63f79e091a7fd30e06e779880eba726a2ba2",
         "os": "macos",
         "cpu": "arm64"
       }
@@ -162,6 +187,31 @@
         "url": "https://github.com/theoremlp/multitool/releases/download/v0.9.0/multitool-aarch64-apple-darwin.tar.xz",
         "file": "multitool-aarch64-apple-darwin/multitool",
         "sha256": "8f5e0cd033b0fcc128c762f8d527110433523da378619cecf40e91c1df5c0686",
+        "os": "macos",
+        "cpu": "arm64"
+      }
+    ]
+  },
+  "operator-sdk": {
+    "binaries": [
+      {
+        "kind": "file",
+        "url": "https://github.com/operator-framework/operator-sdk/releases/download/v1.41.1/operator-sdk_linux_arm64",
+        "sha256": "719e5565cb11895995284d236e94bc14af0c9e7c96954ce4f30f450d8c86995e",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/operator-framework/operator-sdk/releases/download/v1.41.1/operator-sdk_linux_amd64",
+        "sha256": "348284cbd5298f70e2b0a01f9f86820a3149aa6e7e19272e886a9d5769c7fb69",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/operator-framework/operator-sdk/releases/download/v1.41.1/operator-sdk_darwin_arm64",
+        "sha256": "e9f3bdc229697a30f725ffa5bbb15ee59ca7eba6e6f58b3028bf940903ed0df6",
         "os": "macos",
         "cpu": "arm64"
       }
@@ -199,36 +249,36 @@
     "binaries": [
       {
         "kind": "file",
-        "url": "https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_arm64",
-        "sha256": "0e7e1524f68d91b3ff9b089872d185940ab0fa020a5a9052046ef10547023156",
+        "url": "https://github.com/mikefarah/yq/releases/download/v4.47.1/yq_linux_arm64",
+        "sha256": "b7f7c991abe262b0c6f96bbcb362f8b35429cefd59c8b4c2daa4811f1e9df599",
         "os": "linux",
         "cpu": "arm64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64",
-        "sha256": "a2c097180dd884a8d50c956ee16a9cec070f30a7947cf4ebf87d5f36213e9ed7",
+        "url": "https://github.com/mikefarah/yq/releases/download/v4.47.1/yq_linux_amd64",
+        "sha256": "0fb28c6680193c41b364193d0c0fc4a03177aecde51cfc04d506b1517158c2fb",
         "os": "linux",
         "cpu": "x86_64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_darwin_arm64",
-        "sha256": "559a594ef7a6ebc5b81a67b7717fb3accedd266d8fa7d8352da7fec9e463f48b",
+        "url": "https://github.com/mikefarah/yq/releases/download/v4.47.1/yq_darwin_arm64",
+        "sha256": "99aae3a7c9ddfe76bb339f0e7acd8224324b6527436fb6a5d890079bf5fcc590",
         "os": "macos",
         "cpu": "arm64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_darwin_amd64",
-        "sha256": "216ddfa03e7ba0e5aba00b236ec78324b5bfc49b610db254fe92310878baea20",
+        "url": "https://github.com/mikefarah/yq/releases/download/v4.47.1/yq_darwin_amd64",
+        "sha256": "a9b5ca36f7750576c6ace3cc7193349cd676b3a6bf30193fb2773ff45f5af5c2",
         "os": "macos",
         "cpu": "x86_64"
       },
       {
         "kind": "file",
-        "url": "https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_windows_amd64.exe",
-        "sha256": "d509d51e6db30ebb7c9363b7ca8714224f93a456a421d7a7819ab564b868acc7",
+        "url": "https://github.com/mikefarah/yq/releases/download/v4.47.1/yq_windows_amd64.exe",
+        "sha256": "529fc05f4cd557b0767262b7eefbd699fa38616bcb6ece184ee5aeadcc878572",
         "os": "windows",
         "cpu": "x86_64"
       }

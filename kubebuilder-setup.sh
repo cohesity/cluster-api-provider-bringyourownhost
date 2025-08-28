@@ -14,10 +14,14 @@ export GO111MODULE=on
 
 # KUBEBUILDER=operator-sdk
 KUBEBUILDER=kubebuilder
+# git restore -- MODULE.bazel tools go.mod go.sum
+# bazel run @multitool//tools/multitool:cwd -- --lockfile ./tools/tools.lock.json update
+# KUBEBUILDER="bazel run @multitool//tools/kubebuilder:cwd --"
 
+cd ${current_dir}/cluster-api-provider-bringyourownhost
 echo "Initializing ..."
 
-# ${KUBEBUILDER} init --domain cluster.x-k8s.io --repo github.com/cohesity/cluster-api-provider-bringyourownhost --project-name byoh
+${KUBEBUILDER} init --domain cluster.x-k8s.io --repo github.com/cohesity/cluster-api-provider-bringyourownhost --project-name byoh
 ${KUBEBUILDER} edit --multigroup=true
 
 echo "Creating hack/boilerplate.go.txt ..."

@@ -20,6 +20,8 @@ const (
 // ByoClusterSpec defines the desired state of ByoCluster.
 type ByoClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
 	// ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// +optional
@@ -38,7 +40,18 @@ type ByoClusterStatus struct {
 	// +optional
 	Ready bool `json:"ready,omitempty"`
 
-	// Conditions defines current service state of the ByoCluster.
+	// For Kubernetes API conventions, see:
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
+
+	// conditions represent the current state of the ByoCluster resource.
+	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
+	//
+	// Standard condition types include:
+	// - "Available": the resource is fully functional
+	// - "Progressing": the resource is being created or updated
+	// - "Degraded": the resource failed to reach or maintain its desired state
+	//
+	// The status of each condition is one of True, False, or Unknown.
 	// +optional
 	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 
@@ -61,11 +74,19 @@ type APIEndpoint struct {
 
 // ByoCluster is the Schema for the byoclusters API.
 type ByoCluster struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   ByoClusterSpec   `json:"spec,omitempty"`
-	Status ByoClusterStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of ByoCluster
+	// +required
+	Spec ByoClusterSpec `json:"spec"`
+
+	// status defines the observed state of ByoCluster
+	// +optional
+	Status ByoClusterStatus `json:"status,omitempty,omitzero"`
 }
 
 // GetConditions gets the condition for the ByoCluster status

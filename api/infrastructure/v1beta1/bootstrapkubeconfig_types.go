@@ -32,6 +32,8 @@ const (
 // BootstrapKubeconfigSpec defines the desired state of BootstrapKubeconfig.
 type BootstrapKubeconfigSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
 	// APIServer is the address of the kubernetes cluster (https://hostname:port).
 	APIServer string `json:"apiserver"`
@@ -60,11 +62,19 @@ type BootstrapKubeconfigStatus struct {
 
 // BootstrapKubeconfig is the Schema for the bootstrapkubeconfigs API.
 type BootstrapKubeconfig struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   BootstrapKubeconfigSpec   `json:"spec,omitempty"`
-	Status BootstrapKubeconfigStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of BootstrapKubeconfig
+	// +required
+	Spec BootstrapKubeconfigSpec `json:"spec"`
+
+	// status defines the observed state of BootstrapKubeconfig
+	// +optional
+	Status BootstrapKubeconfigStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true

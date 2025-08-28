@@ -13,6 +13,8 @@ import (
 type ByoMachineTemplateSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
 	Template ByoMachineTemplateResource `json:"template"`
 }
@@ -28,11 +30,19 @@ type ByoMachineTemplateStatus struct {
 
 // ByoMachineTemplate is the Schema for the byomachinetemplates API.
 type ByoMachineTemplate struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec   ByoMachineTemplateSpec   `json:"spec,omitempty"`
-	Status ByoMachineTemplateStatus `json:"status,omitempty"`
+	// metadata is a standard object metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty,omitzero"`
+
+	// spec defines the desired state of ByoMachineTemplate
+	// +required
+	Spec ByoMachineTemplateSpec `json:"spec"`
+
+	// status defines the observed state of ByoMachineTemplate
+	// +optional
+	Status ByoMachineTemplateStatus `json:"status,omitempty,omitzero"`
 }
 
 // +kubebuilder:object:root=true
