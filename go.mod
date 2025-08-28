@@ -1,6 +1,6 @@
 module github.com/cohesity/cluster-api-provider-bringyourownhost
 
-go 1.24.3
+go 1.25.0
 
 require (
 	github.com/docker/cli v28.0.2+incompatible

@@ -9,6 +9,7 @@ load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 load("@gazelle//:def.bzl", "gazelle")
 
+# keep
 alias(
     name = "format",
     actual = "//tools/format",
@@ -20,7 +21,10 @@ exports_files(
 )
 
 # gazelle:prefix github.com/cohesity/cluster-api-provider-bringyourownhost
-gazelle(name = "gazelle")
+gazelle(
+    name = "gazelle",
+    gazelle = "@multitool//tools/gazelle",
+)
 
 sh_binary(
     name = "kubebuilder-setup",

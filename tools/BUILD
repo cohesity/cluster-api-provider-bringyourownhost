@@ -14,9 +14,12 @@ included `.envrc` automates this for you.
 """
 
 load("@bazel_env.bzl", "bazel_env")
+load("@bazelrc-preset.bzl", "bazelrc_preset")
 load("@multitool//:tools.bzl", MULTITOOL_TOOLS = "TOOLS")
 
 package(default_visibility = ["//visibility:public"])
+
+bazelrc_preset(name = "preset")
 
 bazel_env(
     name = "bazel_env",
@@ -30,8 +33,8 @@ bazel_env(
 )
 
 sh_binary(
-    name = "_run_under_cwd",
-    srcs = ["_run_under_cwd.sh"],
+    name = "workspace_status",
+    srcs = ["workspace_status.sh"],
 )
 
 sh_binary(

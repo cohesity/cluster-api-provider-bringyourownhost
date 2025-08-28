@@ -30,17 +30,17 @@ See https://blog.aspect.build/run-tools-installed-by-bazel for details.
 
 ## Working with Go modules
 
-After adding a new `import` statement in Go code, run `aspect configure` to update the BUILD file.
+After adding a new `import` statement in Go code, run `bazel run gazelle` to update the BUILD file.
 
 If the package is not already a dependency of the project, you have to do some additional steps:
 
 ```shell
-# Update go.mod and go.sum, using same Go SDK as Bazel
-% aspect run @rules_go//go - mod tidy -v
+# Update go.mod and go.sum, using same Go SDK as Bazel (it comes from direnv)
+% go mod tidy -v
 # Update MODULE.bazel to include the package in `use_repo`
-% aspect mod tidy
+% bazel mod tidy
 # Repeat
-% aspect configure
+% bazel run gazelle
 ```## Stamping release builds
 
 Stamping produces non-deterministic outputs by including information such as a version number or commit hash.
