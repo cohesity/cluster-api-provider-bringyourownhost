@@ -5,7 +5,7 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -43,7 +43,7 @@ type ByoClusterStatus struct {
 	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 
 	// FailureDomains is a list of failure domain objects synced from the infrastructure provider.
-	FailureDomains clusterv1.FailureDomains `json:"failureDomains,omitempty"`
+	FailureDomains []clusterv1.FailureDomain `json:"failureDomains,omitempty"`
 }
 
 // APIEndpoint represents a reachable Kubernetes API endpoint.
@@ -76,6 +76,16 @@ func (byoCluster *ByoCluster) GetConditions() clusterv1.Conditions {
 // SetConditions sets the conditions for the ByoCluster status
 func (byoCluster *ByoCluster) SetConditions(conditions clusterv1.Conditions) {
 	byoCluster.Status.Conditions = conditions
+}
+
+// GetV1Beta1Conditions returns the conditions for the ByoCluster.
+func (c *ByoCluster) GetV1Beta1Conditions() clusterv1.Conditions {
+	return c.Status.Conditions
+}
+
+// SetV1Beta1Conditions sets the conditions for the ByoCluster.
+func (c *ByoCluster) SetV1Beta1Conditions(conditions clusterv1.Conditions) {
+	c.Status.Conditions = conditions
 }
 
 // +kubebuilder:object:root=true

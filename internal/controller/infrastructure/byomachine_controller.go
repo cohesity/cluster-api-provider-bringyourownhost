@@ -23,12 +23,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
+	"sigs.k8s.io/cluster-api/controllers/clustercache"
 	"sigs.k8s.io/cluster-api/controllers/external"
-	"sigs.k8s.io/cluster-api/controllers/remote"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
-	"sigs.k8s.io/cluster-api/util/conditions"
+	conditions "sigs.k8s.io/cluster-api/util/conditions/deprecated/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -54,9 +54,10 @@ const (
 // ByoMachineReconciler reconciles a ByoMachine object
 type ByoMachineReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	Tracker  *remote.ClusterCacheTracker
-	Recorder record.EventRecorder
+	Scheme *runtime.Scheme
+
+	Recorder     record.EventRecorder
+	ClusterCache clustercache.ClusterCache
 }
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=byomachines,verbs=get;list;watch;create;update;patch;delete
@@ -250,7 +251,15 @@ func (r *ByoMachineReconciler) reconcileNormal(ctx context.Context, machineScope
 		}
 	}
 
-	if !machineScope.Cluster.Status.InfrastructureReady {
+	// Check if cluster infrastructure is ready using conditions API
+	infraReady := false
+	for _, condition := range machineScope.Cluster.Status.Conditions {
+		if condition.Type == string(clusterv1.InfrastructureReadyCondition) && condition.Status == metav1.ConditionTrue {
+			infraReady = true
+			break
+		}
+	}
+	if !infraReady {
 		logger.Info("Cluster infrastructure is not ready yet")
 		conditions.MarkFalse(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
 		return reconcile.Result{}, nil
@@ -336,7 +345,7 @@ func (r *ByoMachineReconciler) SetupWithManager(c context.Context, mgr ctrl.Mana
 		).
 		Watches(&clusterv1.Cluster{},
 			handler.EnqueueRequestsFromMapFunc(ClusterToByoMachines),
-			builder.WithPredicates(predicates.ClusterUnpausedAndInfrastructureReady(mgr.GetScheme(), ctrl.LoggerFrom(c))),
+			builder.WithPredicates(predicates.ClusterPausedTransitionsOrInfrastructureProvisioned(mgr.GetScheme(), ctrl.LoggerFrom(c))),
 		).
 		Named("infrastructure-byomachine").
 		Complete(r)
@@ -415,7 +424,8 @@ func (r *ByoMachineReconciler) getRemoteClient(ctx context.Context, byoMachine *
 	if err != nil {
 		return nil, err
 	}
-	remoteClient, err := r.Tracker.GetClient(ctx, util.ObjectKey(cluster))
+
+	remoteClient, err := r.ClusterCache.GetClient(ctx, util.ObjectKey(cluster))
 	if err != nil {
 		return nil, err
 	}
@@ -550,7 +560,7 @@ func (r *ByoMachineReconciler) attachByoHost(ctx context.Context, machineScope *
 		host.Annotations = make(map[string]string)
 	}
 	host.Annotations[infrastructurev1beta1.EndPointIPAnnotation] = machineScope.Cluster.Spec.ControlPlaneEndpoint.Host
-	host.Annotations[infrastructurev1beta1.K8sVersionAnnotation] = strings.Split(*machineScope.Machine.Spec.Version, "+")[0]
+	host.Annotations[infrastructurev1beta1.K8sVersionAnnotation] = strings.Split(machineScope.Machine.Spec.Version, "+")[0]
 	host.Annotations[infrastructurev1beta1.BundleLookupBaseRegistryAnnotation] = machineScope.ByoCluster.Spec.BundleLookupBaseRegistry
 
 	err = byohostHelper.Patch(ctx, &host)
@@ -640,7 +650,7 @@ func (r *ByoMachineReconciler) createInstallerConfig(ctx context.Context, machin
 			return err
 		}
 		installerAnnotations := map[string]string{
-			infrastructurev1beta1.K8sVersionAnnotation: strings.Split(*machineScope.Machine.Spec.Version, "+")[0],
+			infrastructurev1beta1.K8sVersionAnnotation: strings.Split(machineScope.Machine.Spec.Version, "+")[0],
 		}
 		installerConfig, err = external.GenerateTemplate(&external.GenerateTemplateInput{
 			Template:    template,

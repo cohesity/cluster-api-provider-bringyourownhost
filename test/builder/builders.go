@@ -14,7 +14,7 @@ import (
 	certv1 "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 // ByoMachineBuilder holds the variables and objects required to build an infrastructurev1beta1.ByoMachine
@@ -243,7 +243,12 @@ func (m *MachineBuilder) Build() *clusterv1.Machine {
 		},
 		Spec: clusterv1.MachineSpec{
 			ClusterName: m.cluster,
-			Version:     &m.version,
+			Version:     m.version,
+			InfrastructureRef: clusterv1.ContractVersionedObjectReference{
+				APIGroup: "infrastructure.cluster.x-k8s.io",
+				Kind:     "ByoMachine",
+				Name:     m.name + "-byomachine",
+			},
 		},
 	}
 	if m.bootstrapDataSecret != "" {
@@ -294,18 +299,23 @@ func (c *ClusterBuilder) Build() *clusterv1.Cluster {
 			Name:      c.name,
 			Namespace: c.namespace,
 		},
-		Spec: clusterv1.ClusterSpec{},
+		Spec: clusterv1.ClusterSpec{
+			ClusterNetwork: clusterv1.ClusterNetwork{
+				Pods: clusterv1.NetworkRanges{
+					CIDRBlocks: []string{"192.168.0.0/16"},
+				},
+			},
+		},
 	}
 	if c.paused {
-		cluster.Spec.Paused = c.paused
+		cluster.Spec.Paused = &c.paused
 	}
 
 	if c.byoCluster != nil {
-		cluster.Spec.InfrastructureRef = &corev1.ObjectReference{
-			Kind:      "ByoCluster",
-			Namespace: c.byoCluster.Namespace,
-			Name:      c.byoCluster.Name,
-			UID:       c.byoCluster.UID,
+		cluster.Spec.InfrastructureRef = clusterv1.ContractVersionedObjectReference{
+			APIGroup: "infrastructure.cluster.x-k8s.io",
+			Kind:     "ByoCluster",
+			Name:     c.byoCluster.Name,
 		}
 	}
 

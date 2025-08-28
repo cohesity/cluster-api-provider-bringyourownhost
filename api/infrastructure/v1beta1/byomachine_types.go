@@ -6,7 +6,7 @@ package v1beta1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -83,6 +83,16 @@ type ByoMachine struct {
 
 	Spec   ByoMachineSpec   `json:"spec,omitempty"`
 	Status ByoMachineStatus `json:"status,omitempty"`
+}
+
+// GetV1Beta1Conditions returns the conditions for the ByoMachine.
+func (m *ByoMachine) GetV1Beta1Conditions() clusterv1.Conditions {
+	return m.Status.Conditions
+}
+
+// SetV1Beta1Conditions sets the conditions for the ByoMachine.
+func (m *ByoMachine) SetV1Beta1Conditions(conditions clusterv1.Conditions) {
+	m.Status.Conditions = conditions
 }
 
 // +kubebuilder:object:root=true
