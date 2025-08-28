@@ -106,6 +106,12 @@ func (v *ByoHostCustomValidator) ValidateDelete(ctx context.Context, obj runtime
 // To allow byoh manager service account to patch ByoHost CR
 const ManagerServiceAccount = "system:serviceaccount:byoh-system:byoh-controller-manager"
 
+const (
+	// minUsernamePartsForAgent is the minimum number of parts expected when splitting agent username
+	// Agent usernames follow the pattern "system:serviceaccount:namespace:name" which has at least 2 parts when split by ":"
+	minUsernamePartsForAgent = 2
+)
+
 // nolint: gocritic
 // Handle handles all the requests for ByoHost resource
 func (v *ByoHostCustomValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
@@ -139,7 +145,7 @@ func (v *ByoHostCustomValidator) handleCreateUpdateReq(_ context.Context, req *a
 	}
 
 	substrs := strings.Split(userName, ":")
-	if len(substrs) < 2 { //nolint: gomnd
+	if len(substrs) < minUsernamePartsForAgent {
 		return admission.Denied(fmt.Sprintf("%s is not a valid agent username", userName))
 	}
 

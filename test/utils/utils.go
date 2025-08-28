@@ -19,6 +19,7 @@ package utils
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -33,6 +34,9 @@ const (
 
 	defaultKindBinary  = "kind"
 	defaultKindCluster = "kind"
+
+	// defaultFileMode is the default file permission mode for created files (readable by owner/group/others, writable by owner)
+	defaultFileMode = 0o644
 )
 
 func warnError(err error) {
@@ -60,7 +64,7 @@ func Run(cmd *exec.Cmd) (string, error) {
 }
 
 // UninstallCertManager uninstalls the cert manager
-func UninstallCertManager() {
+func UninstallCertManager(ctx context.Context) {
 	url := fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
 	cmd := exec.Command("kubectl", "delete", "-f", url)
 	if _, err := Run(cmd); err != nil {
@@ -73,7 +77,7 @@ func UninstallCertManager() {
 		"cert-manager-controller",
 	}
 	for _, lease := range kubeSystemLeases {
-		cmd = exec.Command("kubectl", "delete", "lease", lease,
+		cmd = exec.CommandContext(ctx, "kubectl", "delete", "lease", lease, //nolint:gosec
 			"-n", "kube-system", "--ignore-not-found", "--force", "--grace-period=0")
 		if _, err := Run(cmd); err != nil {
 			warnError(err)
@@ -218,7 +222,7 @@ func UncommentCode(filename, target, prefix string) error {
 
 	// false positive
 	// nolint:gosec
-	if err = os.WriteFile(filename, out.Bytes(), 0644); err != nil {
+	if err = os.WriteFile(filename, out.Bytes(), defaultFileMode); err != nil {
 		return fmt.Errorf("failed to write file %q: %w", filename, err)
 	}
 

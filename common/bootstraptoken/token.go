@@ -15,10 +15,16 @@ import (
 	bootstraputil "k8s.io/cluster-bootstrap/token/util"
 )
 
+const (
+	// expectedBootstrapTokenParts is the expected number of parts when splitting a bootstrap token
+	// Bootstrap tokens follow the pattern "tokenID.tokenSecret" which results in 3 parts when matched by regex
+	expectedBootstrapTokenParts = 3
+)
+
 // GetTokenIDSecretFromBootstrapToken splits the token string and returns the tokenID and tokenSecret parts
 func GetTokenIDSecretFromBootstrapToken(tokenStr string) (tokenID, tokenSecret string, err error) {
 	substrs := bootstraputil.BootstrapTokenRegexp.FindStringSubmatch(tokenStr)
-	if len(substrs) != 3 { //nolint: gomnd
+	if len(substrs) != expectedBootstrapTokenParts {
 		return "", "", fmt.Errorf("the bootstrap token %q was not of the form %q", tokenStr, bootstrapapi.BootstrapTokenPattern)
 	}
 

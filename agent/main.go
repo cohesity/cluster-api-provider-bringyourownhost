@@ -55,7 +55,6 @@ func (l *labelFlags) String() string {
 }
 
 // Set implements flag.Value interface
-// nolint: gomnd
 func (l *labelFlags) Set(value string) error {
 	// account for comma-separated key-value pairs in a single invocation
 	if len(strings.Split(value, ",")) > 1 {

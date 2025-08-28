@@ -19,16 +19,18 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/system"
-	. "github.com/onsi/gomega" //nolint: stylecheck
+	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/cluster-api/test/framework"
 )
 
 const (
-	kindImage           = "byoh/node:e2e"
-	TempKubeconfigPath  = "/tmp/mgmt.conf"
-	bootstrapKubeconfig = "/tmp/boostrap-kubeconfig"
+	kindImage                = "byoh/node:e2e"
+	TempKubeconfigPath       = "/tmp/mgmt.conf"
+	bootstrapKubeconfig      = "/tmp/boostrap-kubeconfig"
+	defaultFileMode          = 0o644
+	byohConfigPathSplitLimit = 2
 )
 
 type cpConfig struct {
@@ -191,7 +193,7 @@ func (r *ByoHostRunner) copyKubeconfig(config cpConfig, listopt container.ListOp
 
 		re := regexp.MustCompile("server:.*")
 		kubeconfig = re.ReplaceAll(kubeconfig, []byte("server: https://127.0.0.1:"+r.Port))
-		Expect(os.WriteFile(TempKubeconfigPath, kubeconfig, 0o644)).NotTo(HaveOccurred()) //nolint: gosec,gomnd
+		Expect(os.WriteFile(TempKubeconfigPath, kubeconfig, defaultFileMode)).NotTo(HaveOccurred()) //nolint: gosec
 
 		// If the --bootstrap-kubeconfig is not provided, the tests will use
 		// kubeconfig placed in ~/.byoh/config
@@ -223,7 +225,7 @@ func (r *ByoHostRunner) copyKubeconfig(config cpConfig, listopt container.ListOp
 
 			config.sourcePath = TempKubeconfigPath
 			// SplitAfterN used to remove the unwanted special characters in the homeDir
-			config.destPath = strings.SplitAfterN(strings.TrimSpace(homeDir)+"/.byoh/config", "/", 2)[1] //nolint: gomnd
+			config.destPath = strings.SplitAfterN(strings.TrimSpace(homeDir)+"/.byoh/config", "/", byohConfigPathSplitLimit)[1]
 		} else {
 			config.sourcePath = TempKubeconfigPath
 			config.destPath = r.CommandArgs["--bootstrap-kubeconfig"]
