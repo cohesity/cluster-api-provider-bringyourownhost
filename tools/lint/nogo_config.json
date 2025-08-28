@@ -1,0 +1,17 @@
+{
+  "_base": {
+    "description": "Base config that all analyzers inherit",
+    "exclude_files": {
+      ".*/.*fakes/.*": "exclude all fake/mock files from analysis",
+      ".*fake.*\\.go": "exclude all files with 'fake' in the name"
+    }
+  },
+  "fieldalignment": {
+    "description": "Field alignment",
+    "exclude_files": {
+      ".*/.*fakes/.*": "exclude all fake/mock files from analysis",
+      ".*fake.*\\.go": "exclude all files with 'fake' in the name",
+      "api/.*/*\\.go": "exclude all files in api/"
+    }
+  }
+}

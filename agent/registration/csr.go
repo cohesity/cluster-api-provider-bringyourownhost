@@ -46,11 +46,11 @@ var (
 )
 
 type ByohCSR struct {
-	bootstrapClientConfig *restclient.Config
 	bootstrapClient       clientset.Interface
-	PrivateKey            []byte
-	configPath            string
+	bootstrapClientConfig *restclient.Config
 	logger                logr.Logger
+	configPath            string
+	PrivateKey            []byte
 	expiryDuration        time.Duration
 }
 

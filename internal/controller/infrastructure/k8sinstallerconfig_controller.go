@@ -40,10 +40,10 @@ type K8sInstallerConfigReconciler struct {
 // k8sInstallerConfigScope defines a scope defined around a K8sInstallerConfig and its ByoMachine
 type k8sInstallerConfigScope struct {
 	Client     client.Client
-	Logger     logr.Logger
 	Cluster    *clusterv1.Cluster
 	ByoMachine *infrastructurev1beta1.ByoMachine
 	Config     *infrastructurev1beta1.K8sInstallerConfig
+	Logger     logr.Logger
 }
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=k8sinstallerconfigs,verbs=get;list;watch;create;update;patch;delete

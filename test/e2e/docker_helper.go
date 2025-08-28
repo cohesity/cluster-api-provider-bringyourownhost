@@ -32,11 +32,11 @@ const (
 )
 
 type cpConfig struct {
-	followLink bool
-	copyUIDGID bool
 	sourcePath string
 	destPath   string
 	container  string
+	followLink bool
+	copyUIDGID bool
 }
 
 // ByoHostRunner runs bring-you-own-host cluster in docker

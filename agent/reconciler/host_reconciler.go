@@ -35,8 +35,8 @@ type HostReconciler struct {
 	FileWriter          cloudinit.IFileWriter
 	TemplateParser      cloudinit.ITemplateParser
 	Recorder            record.EventRecorder
-	SkipK8sInstallation bool
 	DownloadPath        string
+	SkipK8sInstallation bool
 }
 
 const (

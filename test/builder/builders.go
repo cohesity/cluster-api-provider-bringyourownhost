@@ -19,11 +19,11 @@ import (
 
 // ByoMachineBuilder holds the variables and objects required to build an infrastructurev1beta1.ByoMachine
 type ByoMachineBuilder struct {
+	machine      *clusterv1.Machine
+	selector     map[string]string
 	namespace    string
 	name         string
 	clusterLabel string
-	machine      *clusterv1.Machine
-	selector     map[string]string
 }
 
 // ByoMachine returns a ByoMachineBuilder with the given name and namespace
@@ -89,9 +89,9 @@ func (b *ByoMachineBuilder) Build() *infrastructurev1beta1.ByoMachine {
 
 // ByoHostBuilder holds the variables and objects required to build an infrastructurev1beta1.ByoHost
 type ByoHostBuilder struct {
+	labels    map[string]string
 	namespace string
 	name      string
-	labels    map[string]string
 }
 
 // ByoHost returns a ByoHostBuilder with the given name and namespace
@@ -139,11 +139,11 @@ type MachineBuilder struct {
 
 // ByoClusterBuilder holds the variables and objects required to build an infrastructurev1beta1.ByoCluster
 type ByoClusterBuilder struct {
+	cluster        *clusterv1.Cluster
 	namespace      string
 	name           string
 	bundleRegistry string
 	bundleTag      string
-	cluster        *clusterv1.Cluster
 }
 
 // ByoCluster returns a ByoClusterBuilder with the given name and namespace
@@ -257,10 +257,10 @@ func (m *MachineBuilder) Build() *clusterv1.Machine {
 
 // ClusterBuilder holds the variables and objects required to build a clusterv1.Cluster
 type ClusterBuilder struct {
+	byoCluster *infrastructurev1beta1.ByoCluster
 	namespace  string
 	name       string
 	paused     bool
-	byoCluster *infrastructurev1beta1.ByoCluster
 }
 
 // Cluster returns a ClusterBuilder with the given name and namespace
@@ -314,9 +314,9 @@ func (c *ClusterBuilder) Build() *clusterv1.Cluster {
 
 // SecretBuilder holds the variables and objects required to build a corev1.Secret
 type SecretBuilder struct {
+	data      map[string][]byte
 	namespace string
 	name      string
-	data      map[string][]byte
 }
 
 // Secret returns a SecretBuilder with the given name and namespace
@@ -618,8 +618,8 @@ type BootstrapKubeconfigBuilder struct {
 	namespace     string
 	name          string
 	server        string
-	skipTLSVerify bool
 	caData        string
+	skipTLSVerify bool
 }
 
 func BootstrapKubeconfig(namespace, name string) *BootstrapKubeconfigBuilder {
