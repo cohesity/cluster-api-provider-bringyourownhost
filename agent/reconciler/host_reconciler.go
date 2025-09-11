@@ -12,12 +12,11 @@ import (
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/common"
 	"github.com/pkg/errors"
-	"golang.org/x/sys/unix"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/util/conditions"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	conditions "sigs.k8s.io/cluster-api/util/deprecated/v1beta1/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -338,7 +337,7 @@ func (r *HostReconciler) deleteEndpointIP(ctx context.Context, byoHost *infrastr
 	logger := ctrl.LoggerFrom(ctx)
 	logger.Info("Removing network endpoints")
 	if IP, ok := byoHost.Annotations[infrastructurev1beta1.EndPointIPAnnotation]; ok {
-		networks, err := vip.NewConfig(IP, registration.LocalHostRegistrar.ByoHostInfo.DefaultNetworkInterfaceName, false, "", false, 0, unix.RTN_UNICAST, unix.RTN_UNICAST, "", "", "", false, nil)
+		networks, err := vip.NewConfig(IP, registration.LocalHostRegistrar.ByoHostInfo.DefaultNetworkInterfaceName, false, "", false, 0, 1, 1, "", "", "", false, nil)
 		if err == nil {
 			for _, network := range networks {
 				_, err := network.DeleteIP()
