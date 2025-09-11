@@ -15,10 +15,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	capiutil "sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,7 +40,7 @@ type K8sInstallerConfigReconciler struct {
 // k8sInstallerConfigScope defines a scope defined around a K8sInstallerConfig and its ByoMachine
 type k8sInstallerConfigScope struct {
 	Client     client.Client
-	Cluster    *clusterv1.Cluster
+	Cluster    *clusterv1beta2.Cluster
 	ByoMachine *infrastructurev1beta1.ByoMachine
 	Config     *infrastructurev1beta1.K8sInstallerConfig
 	Logger     logr.Logger
@@ -134,8 +134,8 @@ func (r *K8sInstallerConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	switch {
 	// waiting for ByoMachine to updating it's ByoHostReady condition to false for reason InstallationSecretNotAvailableReason
-	case conditions.GetReason(byoMachine, infrastructurev1beta1.BYOHostReady) != infrastructurev1beta1.InstallationSecretNotAvailableReason:
-		logger.Info("ByoMachine is not waiting for InstallationSecret", "reason", conditions.GetReason(byoMachine, infrastructurev1beta1.BYOHostReady))
+	case getV1Beta1ConditionReason(byoMachine, infrastructurev1beta1.BYOHostReady) != infrastructurev1beta1.InstallationSecretNotAvailableReason:
+		logger.Info("ByoMachine is not waiting for InstallationSecret", "reason", getV1Beta1ConditionReason(byoMachine, infrastructurev1beta1.BYOHostReady))
 		return ctrl.Result{}, nil
 	// Status is ready means a config has been generated.
 	case config.Status.Ready:
@@ -164,6 +164,20 @@ func (r *K8sInstallerConfigReconciler) reconcileNormal(ctx context.Context, scop
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// getV1Beta1ConditionReason gets the reason for a specific condition type from v1beta1 conditions
+func getV1Beta1ConditionReason(obj interface{}, conditionType clusterv1.ConditionType) string {
+	switch o := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		conditions := o.GetConditions()
+		for _, condition := range conditions {
+			if condition.Type == conditionType {
+				return condition.Reason
+			}
+		}
+	}
+	return ""
 }
 
 // storeInstallationData creates a new secret with the install and unstall data passed in as input,
