@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	clusterutilv1 "sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,6 +25,55 @@ import (
 
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 )
+
+// Helper function to set summary condition (replacing deprecated conditions.SetSummary)
+func setSummaryCondition(obj interface{}) {
+	var conditionsList []clusterv1.Condition
+	switch v := obj.(type) {
+	case *infrastructurev1beta1.ByoCluster:
+		conditionsList = v.GetV1Beta1Conditions()
+	default:
+		return
+	}
+
+	// Check if all conditions are ready
+	allReady := true
+	for _, condition := range conditionsList {
+		if condition.Type != clusterv1.ReadyCondition && condition.Status != corev1.ConditionTrue {
+			allReady = false
+			break
+		}
+	}
+
+	// Set or update the ReadyCondition
+	readyStatus := corev1.ConditionFalse
+	if allReady {
+		readyStatus = corev1.ConditionTrue
+	}
+
+	// Update or add ReadyCondition
+	for i := range conditionsList {
+		if conditionsList[i].Type == clusterv1.ReadyCondition {
+			conditionsList[i].Status = readyStatus
+			switch v := obj.(type) {
+			case *infrastructurev1beta1.ByoCluster:
+				v.SetV1Beta1Conditions(conditionsList)
+			}
+			return
+		}
+	}
+
+	// Add new ReadyCondition if not found
+	newCondition := clusterv1.Condition{
+		Type:   clusterv1.ReadyCondition,
+		Status: readyStatus,
+	}
+	conditionsList = append(conditionsList, newCondition)
+	switch v := obj.(type) {
+	case *infrastructurev1beta1.ByoCluster:
+		v.SetV1Beta1Conditions(conditionsList)
+	}
+}
 
 var (
 	// DefaultAPIEndpointPort default port for the API endpoint
@@ -112,17 +161,14 @@ func (r *ByoClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 func patchByoCluster(ctx context.Context, patchHelper *patch.Helper, byoCluster *infrastructurev1beta1.ByoCluster) error {
 	// Always update the readyCondition by summarizing the state of other conditions.
-	// A step counter is added to represent progress during the provisioning process (instead we are hiding it during the deletion process).
-	conditions.SetSummary(byoCluster,
-		conditions.WithStepCounterIf(byoCluster.ObjectMeta.DeletionTimestamp.IsZero()),
-	)
+	setSummaryCondition(byoCluster)
 
 	// Patch the object, ignoring conflicts on the conditions owned by this controller.
 	return patchHelper.Patch(
 		ctx,
 		byoCluster,
-		patch.WithOwnedConditions{Conditions: []clusterv1.ConditionType{
-			clusterv1.ReadyCondition,
+		patch.WithOwnedConditions{Conditions: []string{
+			string(clusterv1.ReadyCondition),
 		}},
 	)
 }

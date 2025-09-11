@@ -23,12 +23,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/clustercache"
 	"sigs.k8s.io/cluster-api/controllers/external"
-	"sigs.k8s.io/cluster-api/controllers/remote"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/cluster-api/util/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -54,9 +53,10 @@ const (
 // ByoMachineReconciler reconciles a ByoMachine object
 type ByoMachineReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	Tracker  *remote.ClusterCacheTracker
-	Recorder record.EventRecorder
+	Scheme *runtime.Scheme
+
+	Recorder     record.EventRecorder
+	ClusterCache clustercache.ClusterCache
 }
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=byomachines,verbs=get;list;watch;create;update;patch;delete
@@ -170,7 +170,7 @@ func (r *ByoMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				logger.Error(err, "cannot set paused annotation for byohost")
 			}
 		}
-		conditions.MarkFalse(byoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.ClusterOrResourcePausedReason, clusterv1.ConditionSeverityInfo, "")
+		setConditionFalse(byoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.ClusterOrResourcePausedReason, clusterv1.ConditionSeverityInfo, "")
 		return ctrl.Result{}, nil
 	}
 
@@ -250,15 +250,23 @@ func (r *ByoMachineReconciler) reconcileNormal(ctx context.Context, machineScope
 		}
 	}
 
-	if !machineScope.Cluster.Status.InfrastructureReady {
+	// Check if cluster infrastructure is ready using conditions API
+	infraReady := false
+	for _, condition := range machineScope.Cluster.Status.Conditions {
+		if condition.Type == string(clusterv1.InfrastructureReadyCondition) && condition.Status == metav1.ConditionTrue {
+			infraReady = true
+			break
+		}
+	}
+	if !infraReady {
 		logger.Info("Cluster infrastructure is not ready yet")
-		conditions.MarkFalse(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
+		setConditionFalse(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
 		return reconcile.Result{}, nil
 	}
 
 	if machineScope.Machine.Spec.Bootstrap.DataSecretName == nil {
 		logger.Info("Bootstrap Data Secret not available yet")
-		conditions.MarkFalse(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.WaitingForBootstrapDataSecretReason, clusterv1.ConditionSeverityInfo, "")
+		setConditionFalse(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.WaitingForBootstrapDataSecretReason, clusterv1.ConditionSeverityInfo, "")
 		return reconcile.Result{}, nil
 	}
 
@@ -269,7 +277,7 @@ func (r *ByoMachineReconciler) reconcileNormal(ctx context.Context, machineScope
 		if res, err := r.attachByoHost(ctx, machineScope); err != nil {
 			return res, err
 		}
-		conditions.MarkFalse(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.InstallationSecretNotAvailableReason, clusterv1.ConditionSeverityInfo, "")
+		setConditionFalse(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.InstallationSecretNotAvailableReason, clusterv1.ConditionSeverityWarning, "")
 		r.Recorder.Eventf(machineScope.ByoHost, corev1.EventTypeNormal, "ByoHostAttachSucceeded", "Attached to ByoMachine %s", machineScope.ByoMachine.Name)
 		r.Recorder.Eventf(machineScope.ByoMachine, corev1.EventTypeNormal, "ByoHostAttachSucceeded", "Attached ByoHost %s", machineScope.ByoHost.Name)
 	}
@@ -310,7 +318,7 @@ func (r *ByoMachineReconciler) updateNodeProviderID(ctx context.Context, machine
 
 	machineScope.ByoMachine.Spec.ProviderID = providerID
 	machineScope.ByoMachine.Status.Ready = true
-	conditions.MarkTrue(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady)
+	setConditionTrue(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady)
 	r.Recorder.Eventf(machineScope.ByoMachine, corev1.EventTypeNormal, "NodeProvisionedSucceeded", "Provisioned Node %s", machineScope.ByoHost.Name)
 	return ctrl.Result{}, nil
 }
@@ -336,7 +344,7 @@ func (r *ByoMachineReconciler) SetupWithManager(c context.Context, mgr ctrl.Mana
 		).
 		Watches(&clusterv1.Cluster{},
 			handler.EnqueueRequestsFromMapFunc(ClusterToByoMachines),
-			builder.WithPredicates(predicates.ClusterUnpausedAndInfrastructureReady(mgr.GetScheme(), ctrl.LoggerFrom(c))),
+			builder.WithPredicates(predicates.ClusterPausedTransitionsOrInfrastructureProvisioned(mgr.GetScheme(), ctrl.LoggerFrom(c))),
 		).
 		Named("infrastructure-byomachine").
 		Complete(r)
@@ -415,7 +423,8 @@ func (r *ByoMachineReconciler) getRemoteClient(ctx context.Context, byoMachine *
 	if err != nil {
 		return nil, err
 	}
-	remoteClient, err := r.Tracker.GetClient(ctx, util.ObjectKey(cluster))
+
+	remoteClient, err := r.ClusterCache.GetClient(ctx, util.ObjectKey(cluster))
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +523,7 @@ func (r *ByoMachineReconciler) attachByoHost(ctx context.Context, machineScope *
 	if len(hostsList.Items) == 0 {
 		logger.Info("No hosts found, waiting..")
 		r.Recorder.Eventf(machineScope.ByoMachine, corev1.EventTypeWarning, "ByoHostSelectionFailed", "No available ByoHost")
-		conditions.MarkFalse(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.BYOHostsUnavailableReason, clusterv1.ConditionSeverityInfo, "")
+		setConditionFalse(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.BYOHostsUnavailableReason, clusterv1.ConditionSeverityWarning, "")
 		return ctrl.Result{RequeueAfter: RequeueForbyohost}, errors.New("no hosts found")
 	}
 	// TODO- Needs smarter logic
@@ -550,7 +559,7 @@ func (r *ByoMachineReconciler) attachByoHost(ctx context.Context, machineScope *
 		host.Annotations = make(map[string]string)
 	}
 	host.Annotations[infrastructurev1beta1.EndPointIPAnnotation] = machineScope.Cluster.Spec.ControlPlaneEndpoint.Host
-	host.Annotations[infrastructurev1beta1.K8sVersionAnnotation] = strings.Split(*machineScope.Machine.Spec.Version, "+")[0]
+	host.Annotations[infrastructurev1beta1.K8sVersionAnnotation] = strings.Split(machineScope.Machine.Spec.Version, "+")[0]
 	host.Annotations[infrastructurev1beta1.BundleLookupBaseRegistryAnnotation] = machineScope.ByoCluster.Spec.BundleLookupBaseRegistry
 
 	err = byohostHelper.Patch(ctx, &host)
@@ -640,7 +649,7 @@ func (r *ByoMachineReconciler) createInstallerConfig(ctx context.Context, machin
 			return err
 		}
 		installerAnnotations := map[string]string{
-			infrastructurev1beta1.K8sVersionAnnotation: strings.Split(*machineScope.Machine.Spec.Version, "+")[0],
+			infrastructurev1beta1.K8sVersionAnnotation: strings.Split(machineScope.Machine.Spec.Version, "+")[0],
 		}
 		installerConfig, err = external.GenerateTemplate(&external.GenerateTemplateInput{
 			Template:    template,
@@ -664,4 +673,64 @@ func (r *ByoMachineReconciler) createInstallerConfig(ctx context.Context, machin
 		return err
 	}
 	return nil
+}
+
+// setConditionFalse sets a condition to False on the object with the given reason and message
+func setConditionFalse(obj interface{}, conditionType clusterv1.ConditionType, reason string, severity clusterv1.ConditionSeverity, message string) {
+	switch o := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		conditions := o.GetConditions()
+		for i := range conditions {
+			if conditions[i].Type == conditionType {
+				conditions[i].Status = corev1.ConditionFalse
+				conditions[i].Reason = reason
+				conditions[i].Severity = severity
+				conditions[i].Message = message
+				conditions[i].LastTransitionTime = metav1.Now()
+				o.SetConditions(conditions)
+				return
+			}
+		}
+		// If condition doesn't exist, add it
+		newCondition := clusterv1.Condition{
+			Type:               conditionType,
+			Status:             corev1.ConditionFalse,
+			Reason:             reason,
+			Severity:           severity,
+			Message:            message,
+			LastTransitionTime: metav1.Now(),
+		}
+		conditions = append(conditions, newCondition)
+		o.SetConditions(conditions)
+	}
+}
+
+// setConditionTrue sets a condition to True on the object
+func setConditionTrue(obj interface{}, conditionType clusterv1.ConditionType) {
+	switch o := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		conditions := o.GetConditions()
+		for i := range conditions {
+			if conditions[i].Type == conditionType {
+				conditions[i].Status = corev1.ConditionTrue
+				conditions[i].Reason = ""
+				conditions[i].Severity = ""
+				conditions[i].Message = ""
+				conditions[i].LastTransitionTime = metav1.Now()
+				o.SetConditions(conditions)
+				return
+			}
+		}
+		// If condition doesn't exist, add it
+		newCondition := clusterv1.Condition{
+			Type:               conditionType,
+			Status:             corev1.ConditionTrue,
+			Reason:             "",
+			Severity:           "",
+			Message:            "",
+			LastTransitionTime: metav1.Now(),
+		}
+		conditions = append(conditions, newCondition)
+		o.SetConditions(conditions)
+	}
 }

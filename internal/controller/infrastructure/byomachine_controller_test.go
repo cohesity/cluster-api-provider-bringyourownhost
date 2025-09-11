@@ -16,10 +16,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -27,6 +26,141 @@ import (
 
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 )
+
+// Helper functions for conditions (replacing deprecated conditions utilities)
+func setConditionFalse(obj interface{}, conditionType clusterv1.ConditionType, reason string, severity clusterv1.ConditionSeverity, message string) {
+	var conditionsList []clusterv1.Condition
+	switch v := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		conditionsList = v.GetV1Beta1Conditions()
+	case *infrastructurev1beta1.ByoHost:
+		conditionsList = v.GetV1Beta1Conditions()
+	case *infrastructurev1beta1.ByoCluster:
+		conditionsList = v.GetV1Beta1Conditions()
+	default:
+		return
+	}
+
+	for i := range conditionsList {
+		if conditionsList[i].Type == conditionType {
+			conditionsList[i].Status = corev1.ConditionFalse
+			conditionsList[i].Reason = reason
+			conditionsList[i].Severity = severity
+			conditionsList[i].Message = message
+			switch v := obj.(type) {
+			case *infrastructurev1beta1.ByoMachine:
+				v.SetV1Beta1Conditions(conditionsList)
+			case *infrastructurev1beta1.ByoHost:
+				v.SetV1Beta1Conditions(conditionsList)
+			case *infrastructurev1beta1.ByoCluster:
+				v.SetV1Beta1Conditions(conditionsList)
+			}
+			return
+		}
+	}
+	// Add new condition if not found
+	newCondition := clusterv1.Condition{
+		Type:     conditionType,
+		Status:   corev1.ConditionFalse,
+		Reason:   reason,
+		Severity: severity,
+		Message:  message,
+	}
+	conditionsList = append(conditionsList, newCondition)
+	switch v := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		v.SetV1Beta1Conditions(conditionsList)
+	case *infrastructurev1beta1.ByoHost:
+		v.SetV1Beta1Conditions(conditionsList)
+	case *infrastructurev1beta1.ByoCluster:
+		v.SetV1Beta1Conditions(conditionsList)
+	}
+}
+
+func setConditionTrue(obj interface{}, conditionType clusterv1.ConditionType) {
+	var conditionsList []clusterv1.Condition
+	switch v := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		conditionsList = v.GetV1Beta1Conditions()
+	case *infrastructurev1beta1.ByoHost:
+		conditionsList = v.GetV1Beta1Conditions()
+	case *infrastructurev1beta1.ByoCluster:
+		conditionsList = v.GetV1Beta1Conditions()
+	default:
+		return
+	}
+
+	for i := range conditionsList {
+		if conditionsList[i].Type == conditionType {
+			conditionsList[i].Status = corev1.ConditionTrue
+			switch v := obj.(type) {
+			case *infrastructurev1beta1.ByoMachine:
+				v.SetV1Beta1Conditions(conditionsList)
+			case *infrastructurev1beta1.ByoHost:
+				v.SetV1Beta1Conditions(conditionsList)
+			case *infrastructurev1beta1.ByoCluster:
+				v.SetV1Beta1Conditions(conditionsList)
+			}
+			return
+		}
+	}
+	// Add new condition if not found
+	newCondition := clusterv1.Condition{
+		Type:   conditionType,
+		Status: corev1.ConditionTrue,
+	}
+	conditionsList = append(conditionsList, newCondition)
+	switch v := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		v.SetV1Beta1Conditions(conditionsList)
+	case *infrastructurev1beta1.ByoHost:
+		v.SetV1Beta1Conditions(conditionsList)
+	case *infrastructurev1beta1.ByoCluster:
+		v.SetV1Beta1Conditions(conditionsList)
+	}
+}
+
+func isConditionTrue(obj interface{}, conditionType clusterv1.ConditionType) bool {
+	var conditionsList []clusterv1.Condition
+	switch v := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		conditionsList = v.GetV1Beta1Conditions()
+	case *infrastructurev1beta1.ByoHost:
+		conditionsList = v.GetV1Beta1Conditions()
+	case *infrastructurev1beta1.ByoCluster:
+		conditionsList = v.GetV1Beta1Conditions()
+	default:
+		return false
+	}
+
+	for _, condition := range conditionsList {
+		if condition.Type == conditionType {
+			return condition.Status == corev1.ConditionTrue
+		}
+	}
+	return false
+}
+
+func getCondition(obj interface{}, conditionType clusterv1.ConditionType) *clusterv1.Condition {
+	var conditionsList []clusterv1.Condition
+	switch v := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		conditionsList = v.GetV1Beta1Conditions()
+	case *infrastructurev1beta1.ByoHost:
+		conditionsList = v.GetV1Beta1Conditions()
+	case *infrastructurev1beta1.ByoCluster:
+		conditionsList = v.GetV1Beta1Conditions()
+	default:
+		return nil
+	}
+
+	for i := range conditionsList {
+		if conditionsList[i].Type == conditionType {
+			return &conditionsList[i]
+		}
+	}
+	return nil
+}
 
 var _ = Describe("ByoMachine Controller", func() {
 	var (
@@ -117,11 +251,34 @@ var _ = Describe("ByoMachine Controller", func() {
 		BeforeEach(func() {
 			ph, err := patch.NewHelper(capiCluster, k8sClientUncached)
 			Expect(err).ShouldNot(HaveOccurred())
-			capiCluster.Status.InfrastructureReady = true
+			// Set InfrastructureReadyCondition to True manually
+			conditions := capiCluster.GetConditions()
+			for i := range conditions {
+				if conditions[i].Type == clusterv1.InfrastructureReadyCondition {
+					conditions[i].Status = corev1.ConditionTrue
+					capiCluster.SetConditions(conditions)
+					break
+				}
+			}
+			if len(conditions) == 0 {
+				newCondition := clusterv1.Condition{
+					Type:   clusterv1.InfrastructureReadyCondition,
+					Status: corev1.ConditionTrue,
+				}
+				conditions = append(conditions, newCondition)
+				capiCluster.SetConditions(conditions)
+			}
 			Expect(ph.Patch(ctx, capiCluster, patch.WithStatusObservedGeneration{})).Should(Succeed())
 
 			WaitForObjectToBeUpdatedInCache(capiCluster, func(object client.Object) bool {
-				return object.(*clusterv1.Cluster).Status.InfrastructureReady == true
+				cluster := object.(*clusterv1.Cluster)
+				conditions := cluster.GetConditions()
+				for _, condition := range conditions {
+					if condition.Type == clusterv1.InfrastructureReadyCondition {
+						return condition.Status == corev1.ConditionTrue
+					}
+				}
+				return false
 			})
 		})
 
@@ -173,14 +330,12 @@ var _ = Describe("ByoMachine Controller", func() {
 				createdByoMachine := &infrastructurev1beta1.ByoMachine{}
 				err = k8sClientUncached.Get(ctx, byoMachineLookupKey, createdByoMachine)
 				Expect(err).ToNot(HaveOccurred())
-				actualCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-
-				Expect(*actualCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:     infrastructurev1beta1.BYOHostReady,
-					Status:   corev1.ConditionFalse,
-					Reason:   infrastructurev1beta1.BYOHostsUnavailableReason,
-					Severity: clusterv1.ConditionSeverityInfo,
-				}))
+				actualCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(actualCondition).ToNot(BeNil())
+				Expect(actualCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(actualCondition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(actualCondition.Reason).To(Equal(infrastructurev1beta1.BYOHostsUnavailableReason))
+				Expect(actualCondition.Severity).To(Equal(clusterv1.ConditionSeverityInfo))
 
 				// assert events
 				events := eventutils.CollectEvents(recorder.Events)
@@ -263,11 +418,10 @@ var _ = Describe("ByoMachine Controller", func() {
 				Expect(createdByoMachine.Spec.ProviderID).To(ContainSubstring(controllers.ProviderIDPrefix))
 				Expect(createdByoMachine.Status.Ready).To(BeTrue())
 
-				actualCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-				Expect(*actualCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:   infrastructurev1beta1.BYOHostReady,
-					Status: corev1.ConditionTrue,
-				}))
+				actualCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(actualCondition).ToNot(BeNil())
+				Expect(actualCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(actualCondition.Status).To(Equal(corev1.ConditionTrue))
 
 				// assert events
 				events := eventutils.CollectEvents(recorder.Events)
@@ -511,13 +665,12 @@ var _ = Describe("ByoMachine Controller", func() {
 				err = k8sClientUncached.Get(ctx, byoMachineLookupKey, createdByoMachine)
 				Expect(err).ToNot(HaveOccurred())
 
-				actualCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-				Expect(*actualCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:     infrastructurev1beta1.BYOHostReady,
-					Status:   corev1.ConditionFalse,
-					Reason:   infrastructurev1beta1.ClusterOrResourcePausedReason,
-					Severity: clusterv1.ConditionSeverityInfo,
-				}))
+				actualCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(actualCondition).ToNot(BeNil())
+				Expect(actualCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(actualCondition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(actualCondition.Reason).To(Equal(infrastructurev1beta1.ClusterOrResourcePausedReason))
+				Expect(actualCondition.Severity).To(Equal(clusterv1.ConditionSeverityInfo))
 			})
 
 			It("should mark BYOHostReady as False when cluster is paused", func() {
@@ -550,13 +703,12 @@ var _ = Describe("ByoMachine Controller", func() {
 				err = k8sClientUncached.Get(ctx, pausedByoMachineLookupKey, createdByoMachine)
 				Expect(err).ToNot(HaveOccurred())
 
-				actualCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-				Expect(*actualCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:     infrastructurev1beta1.BYOHostReady,
-					Status:   corev1.ConditionFalse,
-					Reason:   infrastructurev1beta1.ClusterOrResourcePausedReason,
-					Severity: clusterv1.ConditionSeverityInfo,
-				}))
+				actualCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(actualCondition).ToNot(BeNil())
+				Expect(actualCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(actualCondition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(actualCondition.Reason).To(Equal(infrastructurev1beta1.ClusterOrResourcePausedReason))
+				Expect(actualCondition.Severity).To(Equal(clusterv1.ConditionSeverityInfo))
 
 				Expect(k8sClientUncached.Delete(ctx, pausedCluster)).Should(Succeed())
 				Expect(k8sClientUncached.Delete(ctx, pausedMachine)).Should(Succeed())
@@ -581,13 +733,12 @@ var _ = Describe("ByoMachine Controller", func() {
 				err = k8sClientUncached.Get(ctx, byoMachineLookupKey, createdByoMachine)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				actualCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-				Expect(*actualCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:     infrastructurev1beta1.BYOHostReady,
-					Status:   corev1.ConditionFalse,
-					Reason:   infrastructurev1beta1.WaitingForBootstrapDataSecretReason,
-					Severity: clusterv1.ConditionSeverityInfo,
-				}))
+				actualCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(actualCondition).ToNot(BeNil())
+				Expect(actualCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(actualCondition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(actualCondition.Reason).To(Equal(infrastructurev1beta1.WaitingForBootstrapDataSecretReason))
+				Expect(actualCondition.Severity).To(Equal(clusterv1.ConditionSeverityInfo))
 			})
 
 			It("should mark BYOHostReady condition as False when the InstallationSecret is not available", func() {
@@ -601,13 +752,12 @@ var _ = Describe("ByoMachine Controller", func() {
 				err = k8sClientUncached.Get(ctx, byoMachineLookupKey, createdByoMachine)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				actualCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-				Expect(*actualCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:     infrastructurev1beta1.BYOHostReady,
-					Status:   corev1.ConditionFalse,
-					Reason:   infrastructurev1beta1.InstallationSecretNotAvailableReason,
-					Severity: clusterv1.ConditionSeverityInfo,
-				}))
+				actualCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(actualCondition).ToNot(BeNil())
+				Expect(actualCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(actualCondition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(actualCondition.Reason).To(Equal(infrastructurev1beta1.InstallationSecretNotAvailableReason))
+				Expect(actualCondition.Severity).To(Equal(clusterv1.ConditionSeverityInfo))
 			})
 		})
 
@@ -641,13 +791,12 @@ var _ = Describe("ByoMachine Controller", func() {
 				err = k8sClientUncached.Get(ctx, byoMachineLookupKey, createdByoMachine)
 				Expect(err).ToNot(HaveOccurred())
 
-				actualCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-				Expect(*actualCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:     infrastructurev1beta1.BYOHostReady,
-					Status:   corev1.ConditionFalse,
-					Reason:   infrastructurev1beta1.BYOHostsUnavailableReason,
-					Severity: clusterv1.ConditionSeverityInfo,
-				}))
+				actualCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(actualCondition).ToNot(BeNil())
+				Expect(actualCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(actualCondition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(actualCondition.Reason).To(Equal(infrastructurev1beta1.BYOHostsUnavailableReason))
+				Expect(actualCondition.Severity).To(Equal(clusterv1.ConditionSeverityInfo))
 
 				// assert events
 				events := eventutils.CollectEvents(recorder.Events)
@@ -679,13 +828,12 @@ var _ = Describe("ByoMachine Controller", func() {
 				err = k8sClientUncached.Get(ctx, byoMachineLookupKey, createdByoMachine)
 				Expect(err).ToNot(HaveOccurred())
 
-				actualCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-				Expect(*actualCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:     infrastructurev1beta1.BYOHostReady,
-					Status:   corev1.ConditionFalse,
-					Reason:   infrastructurev1beta1.BYOHostsUnavailableReason,
-					Severity: clusterv1.ConditionSeverityInfo,
-				}))
+				actualCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(actualCondition).ToNot(BeNil())
+				Expect(actualCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(actualCondition.Status).To(Equal(corev1.ConditionFalse))
+				Expect(actualCondition.Reason).To(Equal(infrastructurev1beta1.BYOHostsUnavailableReason))
+				Expect(actualCondition.Severity).To(Equal(clusterv1.ConditionSeverityInfo))
 
 				// assert events
 				events := eventutils.CollectEvents(recorder.Events)
@@ -723,11 +871,10 @@ var _ = Describe("ByoMachine Controller", func() {
 
 				Expect(createdByoMachine.Status.Ready).To(BeTrue())
 
-				readyCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-				Expect(*readyCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:   infrastructurev1beta1.BYOHostReady,
-					Status: corev1.ConditionTrue,
-				}))
+				readyCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(readyCondition).ToNot(BeNil())
+				Expect(readyCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(readyCondition.Status).To(Equal(corev1.ConditionTrue))
 
 				// assert events
 				events := eventutils.CollectEvents(recorder.Events)
@@ -772,11 +919,10 @@ var _ = Describe("ByoMachine Controller", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(createdByoMachine.Status.Ready).To(BeTrue())
 
-				readyCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-				Expect(*readyCondition).To(conditions.MatchCondition(clusterv1.Condition{
-					Type:   infrastructurev1beta1.BYOHostReady,
-					Status: corev1.ConditionTrue,
-				}))
+				readyCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+				Expect(readyCondition).ToNot(BeNil())
+				Expect(readyCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+				Expect(readyCondition.Status).To(Equal(corev1.ConditionTrue))
 
 				// assert events
 				events := eventutils.CollectEvents(recorder.Events)
@@ -820,7 +966,7 @@ var _ = Describe("ByoMachine Controller", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				Expect(k8sInstallerConfigTemplate.Spec.Template.Spec).To(Equal(createdK8sInstallerConfig.Spec))
-				Expect(createdK8sInstallerConfig.GetAnnotations()[infrastructurev1beta1.K8sVersionAnnotation]).To(Equal(*machine.Spec.Version))
+				Expect(createdK8sInstallerConfig.GetAnnotations()[infrastructurev1beta1.K8sVersionAnnotation]).To(Equal(machine.Spec.Version))
 			})
 		})
 
@@ -858,12 +1004,14 @@ var _ = Describe("ByoMachine Controller", func() {
 		BeforeEach(func() {
 			ph, err := patch.NewHelper(capiCluster, k8sClientUncached)
 			Expect(err).ShouldNot(HaveOccurred())
-			capiCluster.Status.InfrastructureReady = false
+			setConditionFalse(capiCluster, clusterv1.InfrastructureReadyCondition, "InfrastructureNotReady", clusterv1.ConditionSeverityInfo, "")
 			err = ph.Patch(ctx, capiCluster, patch.WithStatusObservedGeneration{})
 			Expect(err).ShouldNot(HaveOccurred())
 
 			WaitForObjectToBeUpdatedInCache(capiCluster, func(object client.Object) bool {
-				return object.(*clusterv1.Cluster).Status.InfrastructureReady == false
+				cluster := object.(*clusterv1.Cluster)
+				condition := getCondition(cluster, clusterv1.InfrastructureReadyCondition)
+				return condition != nil && condition.Status == corev1.ConditionFalse
 			})
 		})
 
@@ -875,13 +1023,12 @@ var _ = Describe("ByoMachine Controller", func() {
 			err = k8sClientUncached.Get(ctx, byoMachineLookupKey, createdByoMachine)
 			Expect(err).ShouldNot(HaveOccurred())
 
-			actualCondition := conditions.Get(createdByoMachine, infrastructurev1beta1.BYOHostReady)
-			Expect(*actualCondition).To(conditions.MatchCondition(clusterv1.Condition{
-				Type:     infrastructurev1beta1.BYOHostReady,
-				Status:   corev1.ConditionFalse,
-				Reason:   infrastructurev1beta1.WaitingForClusterInfrastructureReason,
-				Severity: clusterv1.ConditionSeverityInfo,
-			}))
+			actualCondition := getCondition(createdByoMachine, infrastructurev1beta1.BYOHostReady)
+			Expect(actualCondition).ToNot(BeNil())
+			Expect(actualCondition.Type).To(Equal(infrastructurev1beta1.BYOHostReady))
+			Expect(actualCondition.Status).To(Equal(corev1.ConditionFalse))
+			Expect(actualCondition.Reason).To(Equal(infrastructurev1beta1.WaitingForClusterInfrastructureReason))
+			Expect(actualCondition.Severity).To(Equal(clusterv1.ConditionSeverityInfo))
 
 			// assert events
 			events := eventutils.CollectEvents(recorder.Events)
