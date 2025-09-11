@@ -23,7 +23,7 @@ go_library(
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_apimachinery//pkg/runtime",
         "@io_k8s_apimachinery//pkg/runtime/schema",
-        "@io_k8s_sigs_cluster_api//api/v1beta1",
+        "@io_k8s_sigs_cluster_api//api/core/v1beta2",
         "@io_k8s_sigs_controller_runtime//pkg/scheme",
     ],
 )

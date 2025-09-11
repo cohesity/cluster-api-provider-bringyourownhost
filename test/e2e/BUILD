@@ -53,7 +53,7 @@ go_test(
         "@io_k8s_apimachinery//pkg/runtime",
         "@io_k8s_apimachinery//pkg/types",
         "@io_k8s_client_go//tools/clientcmd",
-        "@io_k8s_sigs_cluster_api//api/v1beta1",
+        "@io_k8s_sigs_cluster_api//api/core/v1beta2",
         "@io_k8s_sigs_cluster_api//util",
         "@io_k8s_sigs_cluster_api_test//framework",
         "@io_k8s_sigs_cluster_api_test//framework/bootstrap",

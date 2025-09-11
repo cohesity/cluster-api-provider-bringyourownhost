@@ -16,10 +16,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
-	"sigs.k8s.io/cluster-api/util/conditions"
+	conditions "sigs.k8s.io/cluster-api/util/conditions/deprecated/v1beta1"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -117,11 +117,12 @@ var _ = Describe("ByoMachine Controller", func() {
 		BeforeEach(func() {
 			ph, err := patch.NewHelper(capiCluster, k8sClientUncached)
 			Expect(err).ShouldNot(HaveOccurred())
-			capiCluster.Status.InfrastructureReady = true
+			conditions.MarkTrue(capiCluster, clusterv1.InfrastructureReadyCondition)
 			Expect(ph.Patch(ctx, capiCluster, patch.WithStatusObservedGeneration{})).Should(Succeed())
 
 			WaitForObjectToBeUpdatedInCache(capiCluster, func(object client.Object) bool {
-				return object.(*clusterv1.Cluster).Status.InfrastructureReady == true
+				cluster := object.(*clusterv1.Cluster)
+				return conditions.IsTrue(cluster, clusterv1.InfrastructureReadyCondition)
 			})
 		})
 
@@ -820,7 +821,7 @@ var _ = Describe("ByoMachine Controller", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 
 				Expect(k8sInstallerConfigTemplate.Spec.Template.Spec).To(Equal(createdK8sInstallerConfig.Spec))
-				Expect(createdK8sInstallerConfig.GetAnnotations()[infrastructurev1beta1.K8sVersionAnnotation]).To(Equal(*machine.Spec.Version))
+				Expect(createdK8sInstallerConfig.GetAnnotations()[infrastructurev1beta1.K8sVersionAnnotation]).To(Equal(machine.Spec.Version))
 			})
 		})
 
@@ -858,12 +859,13 @@ var _ = Describe("ByoMachine Controller", func() {
 		BeforeEach(func() {
 			ph, err := patch.NewHelper(capiCluster, k8sClientUncached)
 			Expect(err).ShouldNot(HaveOccurred())
-			capiCluster.Status.InfrastructureReady = false
+			conditions.MarkFalse(capiCluster, clusterv1.InfrastructureReadyCondition, "InfrastructureNotReady", clusterv1.ConditionSeverityInfo, "")
 			err = ph.Patch(ctx, capiCluster, patch.WithStatusObservedGeneration{})
 			Expect(err).ShouldNot(HaveOccurred())
 
 			WaitForObjectToBeUpdatedInCache(capiCluster, func(object client.Object) bool {
-				return object.(*clusterv1.Cluster).Status.InfrastructureReady == false
+				cluster := object.(*clusterv1.Cluster)
+				return conditions.IsFalse(cluster, clusterv1.InfrastructureReadyCondition)
 			})
 		})
 

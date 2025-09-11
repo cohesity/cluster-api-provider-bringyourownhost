@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/klog/v2/klogr"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 )
 
@@ -330,9 +329,11 @@ var _ = Describe("Agent", func() {
 				Eventually(func() (condition corev1.ConditionStatus) {
 					err := k8sClient.Get(ctx, namespace, updatedByoHost)
 					if err == nil {
-						kubeInstallStatus := conditions.Get(updatedByoHost, infrastructurev1beta1.K8sComponentsInstallationSucceeded)
-						if kubeInstallStatus != nil {
-							return kubeInstallStatus.Status
+						// Direct condition lookup for v1beta2 compatibility
+						for _, cond := range updatedByoHost.Status.Conditions {
+							if cond.Type == infrastructurev1beta1.K8sComponentsInstallationSucceeded {
+								return cond.Status
+							}
 						}
 					}
 					return corev1.ConditionFalse

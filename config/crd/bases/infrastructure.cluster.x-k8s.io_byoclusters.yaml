@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.3
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: byoclusters.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -125,9 +125,10 @@ spec:
                     type: object
                   type: array
                 failureDomains:
-                  additionalProperties:
+                  description: FailureDomains is a list of failure domain objects synced from the infrastructure provider.
+                  items:
                     description: |-
-                      FailureDomainSpec is the Schema for Cluster API failure domains.
+                      FailureDomain is the Schema for Cluster API failure domains.
                       It allows controllers to understand how many failure domains a cluster can optionally span across.
                     properties:
                       attributes:
@@ -138,9 +139,15 @@ spec:
                       controlPlane:
                         description: controlPlane determines if this failure domain is suitable for use by control plane machines.
                         type: boolean
+                      name:
+                        description: name is the name of the failure domain.
+                        maxLength: 256
+                        minLength: 1
+                        type: string
+                    required:
+                      - name
                     type: object
-                  description: FailureDomains is a list of failure domain objects synced from the infrastructure provider.
-                  type: object
+                  type: array
                 ready:
                   type: boolean
               type: object

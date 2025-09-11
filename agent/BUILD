@@ -22,7 +22,7 @@ go_library(
         "@io_k8s_client_go//rest",
         "@io_k8s_klog_v2//:klog",
         "@io_k8s_klog_v2//klogr",
-        "@io_k8s_sigs_cluster_api//api/v1beta1",
+        "@io_k8s_sigs_cluster_api//api/core/v1beta2",
         "@io_k8s_sigs_controller_runtime//:controller-runtime",
         "@io_k8s_sigs_controller_runtime//pkg/cache",
         "@io_k8s_sigs_controller_runtime//pkg/client",
@@ -67,8 +67,7 @@ go_test(
         "@io_k8s_client_go//kubernetes",
         "@io_k8s_client_go//rest",
         "@io_k8s_klog_v2//klogr",
-        "@io_k8s_sigs_cluster_api//api/v1beta1",
-        "@io_k8s_sigs_cluster_api//util/conditions",
+        "@io_k8s_sigs_cluster_api//api/core/v1beta2",
         "@io_k8s_sigs_cluster_api//util/patch",
         "@io_k8s_sigs_controller_runtime//pkg/client",
         "@io_k8s_sigs_controller_runtime//pkg/envtest",
@@ -80,4 +79,5 @@ go_test(
 go_image(
     name = "image",
     binary = "agent",
+    visibility = ["//visibility:public"],
 )
