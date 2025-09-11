@@ -18,9 +18,10 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientset "k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/controllers/remote"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	"sigs.k8s.io/cluster-api/controllers/clustercache"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -75,7 +76,7 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 
-	c, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctrl.SetupSignalHandler())
 	cancel()
 
 	opts := zap.Options{
@@ -177,28 +178,38 @@ func main() {
 		os.Exit(1)
 	}
 
-	remoteLogger := ctrl.Log.WithName("remote").WithName("ClusterCacheTracker")
-	options := remote.ClusterCacheTrackerOptions{Log: &remoteLogger}
-	tracker, err := remote.NewClusterCacheTracker(mgr, options)
+	// Setup secret caching client for cluster cache
+	secretCachingClient, err := client.New(mgr.GetConfig(), client.Options{
+		HTTPClient: mgr.GetHTTPClient(),
+		Cache: &client.CacheOptions{
+			Reader: mgr.GetCache(),
+		},
+	})
 	if err != nil {
-		setupLog.Error(err, "unable to create cluster cache tracker")
+		setupLog.Error(err, "unable to create secret caching client")
 		os.Exit(1)
 	}
 
-	if err = (&remote.ClusterCacheReconciler{
-		Client:  mgr.GetClient(),
-		Tracker: tracker,
-	}).SetupWithManager(c, mgr, controller.Options{MaxConcurrentReconciles: 0}); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ClusterCacheReconciler")
+	// Set up cluster cache
+	clusterCache, err := clustercache.SetupWithManager(ctx, mgr, clustercache.Options{
+		SecretClient: secretCachingClient,
+		Client: clustercache.ClientOptions{
+			QPS:   20,
+			Burst: 30,
+		},
+	}, controller.Options{MaxConcurrentReconciles: 1})
+	if err != nil {
+		setupLog.Error(err, "unable to create cluster cache")
 		os.Exit(1)
 	}
 
 	if err = (&infrastructurecontroller.ByoMachineReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Tracker:  tracker,
-		Recorder: mgr.GetEventRecorderFor("byomachine-controller"),
-	}).SetupWithManager(c, mgr); err != nil {
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+
+		Recorder:     mgr.GetEventRecorderFor("byomachine-controller"),
+		ClusterCache: clusterCache,
+	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ByoMachine")
 		os.Exit(1)
 	}
@@ -212,7 +223,7 @@ func main() {
 	if err = (&infrastructurecontroller.ByoClusterReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(c, mgr); err != nil {
+	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ByoCluster")
 		os.Exit(1)
 	}
@@ -275,7 +286,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}

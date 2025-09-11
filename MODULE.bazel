@@ -32,7 +32,7 @@ go_deps.gazelle_default_attributes(
     build_extra_args = [
         "-go_naming_convention_external=go_default_library",
     ],
-    build_file_generation = "on",
+    build_file_generation = "auto",
     directives = [
         "gazelle:proto disable",
     ],
@@ -64,9 +64,9 @@ use_repo(
     "io_k8s_sigs_controller_runtime",
     "io_k8s_sigs_controller_tools",
     "io_k8s_sigs_kustomize_kustomize_v5",
+    "io_k8s_sigs_structured_merge_diff_v4",
     "io_k8s_sigs_yaml",
     "io_k8s_utils",
-    "org_golang_x_sys",
     "org_golang_x_tools",
     "org_golang_x_tools_gopls",
 )

@@ -10,14 +10,15 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/cluster-api/controllers/clustercache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -30,9 +31,9 @@ import (
 	// +kubebuilder:scaffold:imports
 
 	fakeclientset "k8s.io/client-go/kubernetes/fake"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	"sigs.k8s.io/cluster-api/controllers/remote"
+	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -87,8 +88,8 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "..", "config", "crd", "bases"),
-			filepath.Join(build.Default.GOPATH, "pkg", "mod", "sigs.k8s.io", "cluster-api@v1.10.2", "config", "crd", "bases"),
-			filepath.Join(build.Default.GOPATH, "pkg", "mod", "sigs.k8s.io", "cluster-api@v1.10.2", "bootstrap", "kubeadm", "config", "crd", "bases"),
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", "sigs.k8s.io", "cluster-api@v1.11.0", "config", "crd", "bases"),
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", "sigs.k8s.io", "cluster-api@v1.11.0", "bootstrap", "kubeadm", "config", "crd", "bases"),
 		},
 		ErrorIfCRDPathMissing: true,
 	}
@@ -107,6 +108,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = clusterv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = clusterv1beta2.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = bootstrapv1.AddToScheme(scheme.Scheme)
@@ -136,14 +140,20 @@ var _ = BeforeSuite(func() {
 	).Build()
 
 	recorder = record.NewFakeRecorder(32)
+
+	// Setup mock cluster cache for testing
+	clusterCache, err := clustercache.SetupWithManager(context.TODO(), k8sManager, clustercache.Options{
+		SecretClient: k8sManager.GetClient(),
+		Client: clustercache.ClientOptions{
+			UserAgent: "byoh-controller-test",
+		},
+	}, controller.Options{MaxConcurrentReconciles: 1})
+	Expect(err).NotTo(HaveOccurred())
+
 	reconciler = &controllers.ByoMachineReconciler{
-		Client: k8sManager.GetClient(),
-		Tracker: remote.NewTestClusterCacheTracker(logr.New(logf.NullLogSink{}),
-			k8sClient, k8sClient, scheme.Scheme,
-			client.ObjectKey{
-				Name: capiCluster.Name, Namespace: capiCluster.Namespace,
-			}),
-		Recorder: recorder,
+		Client:       k8sManager.GetClient(),
+		Recorder:     recorder,
+		ClusterCache: clusterCache,
 	}
 	err = reconciler.SetupWithManager(context.TODO(), k8sManager)
 	Expect(err).NotTo(HaveOccurred())

@@ -16,10 +16,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/pointer"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
-	"sigs.k8s.io/cluster-api/util/conditions"
+	conditions "sigs.k8s.io/cluster-api/util/deprecated/v1beta1/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -204,10 +204,7 @@ var _ = Describe("K8sInstallerConfig Controller", func() {
 				OSName:       "linux",
 				OSImage:      "Ubuntu 24.04.1 LTS",
 			}
-			conditions.Set(byoMachine, &clusterv1.Condition{
-				Type:   infrastructurev1beta1.BYOHostReady,
-				Reason: infrastructurev1beta1.InstallationSecretNotAvailableReason,
-			})
+			conditions.MarkFalse(byoMachine, infrastructurev1beta1.BYOHostReady, infrastructurev1beta1.InstallationSecretNotAvailableReason, clusterv1.ConditionSeverityInfo, "")
 			Expect(ph.Patch(ctx, byoMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
 			WaitForObjectToBeUpdatedInCache(byoMachine, func(object client.Object) bool {
 				return object.(*infrastructurev1beta1.ByoMachine).Status.HostInfo.Architecture == "amd64"

@@ -15,10 +15,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 	capiutil "sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
-	"sigs.k8s.io/cluster-api/util/conditions"
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -118,24 +117,38 @@ func (r *K8sInstallerConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 	logger.Info("byoMachine found")
 
 	// Fetch the Cluster
-	cluster, err := capiutil.GetClusterFromMetadata(ctx, r.Client, byoMachine.ObjectMeta)
+	clusterV1beta2, err := capiutil.GetClusterFromMetadata(ctx, r.Client, byoMachine.ObjectMeta)
 	if err != nil {
 		logger.Error(err, "ByoMachine owner Machine is missing cluster label or cluster does not exist")
 		return ctrl.Result{}, err
+	}
+
+	// Convert v1beta2.Cluster to v1beta1.Cluster for compatibility
+	cluster := &clusterv1.Cluster{
+		ObjectMeta: clusterV1beta2.ObjectMeta,
+		Spec: clusterv1.ClusterSpec{
+			ControlPlaneEndpoint: clusterv1.APIEndpoint{
+				Host: clusterV1beta2.Spec.ControlPlaneEndpoint.Host,
+				Port: clusterV1beta2.Spec.ControlPlaneEndpoint.Port,
+			},
+		},
+		Status: clusterv1.ClusterStatus{
+			Phase: clusterV1beta2.Status.Phase,
+		},
 	}
 	logger = logger.WithValues("cluster", cluster.Name)
 	scope.Cluster = cluster
 	scope.Logger = logger
 
-	if annotations.IsPaused(cluster, config) {
+	if annotations.IsPaused(clusterV1beta2, config) {
 		logger.Info("Reconciliation is paused for this object")
 		return ctrl.Result{}, nil
 	}
 
 	switch {
 	// waiting for ByoMachine to updating it's ByoHostReady condition to false for reason InstallationSecretNotAvailableReason
-	case conditions.GetReason(byoMachine, infrastructurev1beta1.BYOHostReady) != infrastructurev1beta1.InstallationSecretNotAvailableReason:
-		logger.Info("ByoMachine is not waiting for InstallationSecret", "reason", conditions.GetReason(byoMachine, infrastructurev1beta1.BYOHostReady))
+	case getV1Beta1ConditionReason(byoMachine, infrastructurev1beta1.BYOHostReady) != infrastructurev1beta1.InstallationSecretNotAvailableReason:
+		logger.Info("ByoMachine is not waiting for InstallationSecret", "reason", getV1Beta1ConditionReason(byoMachine, infrastructurev1beta1.BYOHostReady))
 		return ctrl.Result{}, nil
 	// Status is ready means a config has been generated.
 	case config.Status.Ready:
@@ -164,6 +177,20 @@ func (r *K8sInstallerConfigReconciler) reconcileNormal(ctx context.Context, scop
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// getV1Beta1ConditionReason gets the reason for a specific condition type from v1beta1 conditions
+func getV1Beta1ConditionReason(obj interface{}, conditionType clusterv1.ConditionType) string {
+	switch o := obj.(type) {
+	case *infrastructurev1beta1.ByoMachine:
+		conditions := o.GetConditions()
+		for _, condition := range conditions {
+			if condition.Type == conditionType {
+				return condition.Reason
+			}
+		}
+	}
+	return ""
 }
 
 // storeInstallationData creates a new secret with the install and unstall data passed in as input,

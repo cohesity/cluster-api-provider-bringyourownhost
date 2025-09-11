@@ -5,7 +5,7 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta1"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -96,6 +96,16 @@ func (byoCluster *ByoCluster) GetConditions() clusterv1.Conditions {
 
 // SetConditions sets the conditions for the ByoCluster status
 func (byoCluster *ByoCluster) SetConditions(conditions clusterv1.Conditions) {
+	byoCluster.Status.Conditions = conditions
+}
+
+// GetV1Beta1Conditions gets the ByoCluster status conditions for v1beta1 compatibility
+func (byoCluster *ByoCluster) GetV1Beta1Conditions() clusterv1.Conditions {
+	return byoCluster.Status.Conditions
+}
+
+// SetV1Beta1Conditions sets the ByoCluster status conditions for v1beta1 compatibility
+func (byoCluster *ByoCluster) SetV1Beta1Conditions(conditions clusterv1.Conditions) {
 	byoCluster.Status.Conditions = conditions
 }
 
