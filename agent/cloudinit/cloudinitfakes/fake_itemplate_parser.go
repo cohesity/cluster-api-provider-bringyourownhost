@@ -92,8 +92,6 @@ func (fake *FakeITemplateParser) ParseTemplateReturnsOnCall(i int, result1 strin
 func (fake *FakeITemplateParser) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.parseTemplateMutex.RLock()
-	defer fake.parseTemplateMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

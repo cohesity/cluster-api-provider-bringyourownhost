@@ -121,7 +121,7 @@ var _ = Describe("ByoHost Webhook", func() {
 					APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "host1",
+					Name:      "host2",
 					Namespace: "default",
 				},
 				Spec: infrastructurev1beta1.ByoHostSpec{},
@@ -150,7 +150,7 @@ var _ = Describe("ByoHost Webhook", func() {
 					APIVersion: "infrastructure.cluster.x-k8s.io/v1beta1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "host1",
+					Name:      "host3",
 					Namespace: "default",
 				},
 				Spec: infrastructurev1beta1.ByoHostSpec{},
@@ -163,7 +163,7 @@ var _ = Describe("ByoHost Webhook", func() {
 			Expect(ValidUserK8sClient.Update(ctx, byoHost)).Should(Succeed())
 			Eventually(func() (done bool) {
 				updatedByoHost := &infrastructurev1beta1.ByoHost{}
-				err := ValidUserK8sClient.Get(ctx, types.NamespacedName{Namespace: "default", Name: "host1"}, updatedByoHost)
+				err := ValidUserK8sClient.Get(ctx, types.NamespacedName{Namespace: "default", Name: "host3"}, updatedByoHost)
 				Expect(err).ShouldNot(HaveOccurred())
 				return updatedByoHost.Status.HostDetails.Architecture == arch
 			})

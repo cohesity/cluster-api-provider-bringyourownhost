@@ -5,7 +5,6 @@ package infrastructure
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -14,6 +13,7 @@ import (
 
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,6 +49,10 @@ const (
 	RequeueForbyohost = 10 * time.Second
 	// RequeueInstallerConfigTime requeue delay for installer config
 	RequeueInstallerConfigTime = 10 * time.Second
+	// KubeadmControlPlaneKind is the Kind for KubeadmControlPlane
+	KubeadmControlPlaneKind = "KubeadmControlPlane"
+	// MachineDeploymentKind is the Kind for MachineDeployment
+	MachineSetKind = "MachineSet"
 )
 
 // ByoMachineReconciler reconciles a ByoMachine object
@@ -289,6 +293,16 @@ func (r *ByoMachineReconciler) reconcileNormal(ctx context.Context, machineScope
 		}
 	}
 
+	// Check if the version in the machine spec matches the version on the node
+	result, err := r.checkNodeVersionMatch(ctx, machineScope)
+	if err != nil {
+		return result, err
+	}
+
+	if result.RequeueAfter > 0 {
+		return result, nil
+	}
+
 	logger.Info("Updating Node with ProviderID")
 	return r.updateNodeProviderID(ctx, machineScope)
 }
@@ -312,6 +326,38 @@ func (r *ByoMachineReconciler) updateNodeProviderID(ctx context.Context, machine
 	machineScope.ByoMachine.Status.Ready = true
 	conditions.MarkTrue(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady)
 	r.Recorder.Eventf(machineScope.ByoMachine, corev1.EventTypeNormal, "NodeProvisionedSucceeded", "Provisioned Node %s", machineScope.ByoHost.Name)
+	return ctrl.Result{}, nil
+}
+
+// checkNodeVersionMatch verifies that the node's kubelet version matches the desired version in the machine spec.
+func (r *ByoMachineReconciler) checkNodeVersionMatch(ctx context.Context, machineScope *byoMachineScope) (ctrl.Result, error) {
+	logger := log.FromContext(ctx).WithValues("cluster", machineScope.Cluster.Name)
+
+	remoteClient, err := r.getRemoteClient(ctx, machineScope.ByoMachine)
+	if err != nil {
+		logger.Error(err, "failed to get remote client for version check")
+		return ctrl.Result{}, err
+	}
+
+	node := &corev1.Node{}
+	nodeKey := client.ObjectKey{Name: machineScope.ByoHost.Name, Namespace: machineScope.ByoHost.Namespace}
+	err = remoteClient.Get(ctx, nodeKey, node)
+	if err != nil {
+		logger.Error(err, "failed to get node for version check")
+		return ctrl.Result{}, fmt.Errorf("failed to get node for version check %v: %w", nodeKey, err)
+	}
+
+	// Extract the desired version from machine spec
+	desiredVersion := *machineScope.Machine.Spec.Version
+	// Get the node kubelet version
+	nodeVersion := node.Status.NodeInfo.KubeletVersion
+
+	if desiredVersion != nodeVersion {
+		logger.Info("Node version does not match machine spec version, requeuing", "nodeVersion", nodeVersion, "desiredVersion", desiredVersion)
+		return ctrl.Result{RequeueAfter: 15 * time.Second}, nil
+	}
+	logger.Info("Node version matches machine spec version", "nodeVersion", nodeVersion, "desiredVersion", desiredVersion)
+
 	return ctrl.Result{}, nil
 }
 
@@ -595,15 +641,104 @@ func ByoHostToByoMachineMapFunc(gvk schema.GroupVersionKind) handler.MapFunc {
 }
 
 func (r *ByoMachineReconciler) markHostForCleanup(ctx context.Context, machineScope *byoMachineScope) error {
+	logger := log.FromContext(ctx)
+
+	// Check if the Machine's owner (KubeadmControlPlane or MachineDeployment) is marked for deletion
+	machineOwnerMarkedForDeletion := r.isMachineOwnerMarkedForDeletion(ctx, machineScope)
+
+	// Check if the Node corresponding to the machine is marked for deletion
+	nodeMarkedForDeletion := r.isNodeMarkedForDeletion(ctx, machineScope)
+
 	helper, _ := patch.NewHelper(machineScope.ByoHost, r.Client)
 
 	if machineScope.ByoHost.Annotations == nil {
 		machineScope.ByoHost.Annotations = map[string]string{}
 	}
+
+	// Only add cleanup annotation if Machine owner or Node is marked for deletion
+	if machineOwnerMarkedForDeletion || nodeMarkedForDeletion {
+		logger.Info("Adding host reset annotation", "machineOwnerMarkedForDeletion", machineOwnerMarkedForDeletion, "nodeMarkedForDeletion", nodeMarkedForDeletion)
+		machineScope.ByoHost.Annotations[infrastructurev1beta1.HostResetAnnotation] = ""
+	}
+
+	logger.Info("Adding host cleanup annotation", "machineOwnerMarkedForDeletion", machineOwnerMarkedForDeletion, "nodeMarkedForDeletion", nodeMarkedForDeletion)
+
 	machineScope.ByoHost.Annotations[infrastructurev1beta1.HostCleanupAnnotation] = ""
 
 	// Issue the patch for byohost
 	return helper.Patch(ctx, machineScope.ByoHost)
+}
+
+// isMachineOwnerMarkedForDeletion checks if the Machine or its owner (KubeadmControlPlane or MachineDeployment)
+// is marked for deletion by checking the deletion timestamp
+func (r *ByoMachineReconciler) isMachineOwnerMarkedForDeletion(ctx context.Context, machineScope *byoMachineScope) bool {
+	logger := log.FromContext(ctx)
+
+	if machineScope.Machine == nil {
+		return false
+	}
+
+	// Check if Machine itself is marked for deletion
+	if !machineScope.Machine.DeletionTimestamp.IsZero() {
+		// Check the owner of the Machine
+		for _, ownerRef := range machineScope.Machine.GetOwnerReferences() {
+			if ownerRef.Kind != KubeadmControlPlaneKind && ownerRef.Kind != MachineSetKind {
+				continue
+			}
+			// Fetch the owner object
+			owner := &unstructured.Unstructured{}
+			owner.SetAPIVersion(ownerRef.APIVersion)
+			owner.SetKind(ownerRef.Kind)
+			ownerKey := client.ObjectKey{
+				Namespace: machineScope.Machine.Namespace,
+				Name:      ownerRef.Name,
+			}
+
+			err := r.Get(ctx, ownerKey, owner)
+			if err != nil {
+				logger.Info("Unable to get Machine owner to check deletion status",
+					"ownerKind", ownerRef.Kind, "ownerName", ownerRef.Name, "error", err)
+			} else if !owner.GetDeletionTimestamp().IsZero() {
+				logger.Info("Machine owner is marked for deletion",
+					"ownerKind", ownerRef.Kind, "ownerName", ownerRef.Name)
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// isNodeMarkedForDeletion checks if the Node corresponding to the machine is marked for deletion
+// in the workload cluster by checking the deletion timestamp
+func (r *ByoMachineReconciler) isNodeMarkedForDeletion(ctx context.Context, machineScope *byoMachineScope) bool {
+	logger := log.FromContext(ctx)
+
+	if machineScope.ByoHost == nil {
+		return false
+	}
+
+	remoteClient, err := r.getRemoteClient(ctx, machineScope.ByoMachine)
+	if err != nil {
+		logger.Info("Unable to get remote client to check node deletion status", "error", err)
+		return false
+	}
+
+	node := &corev1.Node{}
+	nodeKey := client.ObjectKey{Name: machineScope.ByoHost.Name}
+	err = remoteClient.Get(ctx, nodeKey, node)
+	if err != nil {
+		// Node not found or error getting it - not marked for deletion
+		logger.Info("Node not found or error getting it - not marked for deletion", "error", err, "node", nodeKey)
+		return false
+	}
+
+	if !node.DeletionTimestamp.IsZero() {
+		logger.Info("Node is marked for deletion", "node", nodeKey)
+		return true
+	}
+
+	return false
 }
 
 func (r *ByoMachineReconciler) getInstallerConfig(ctx context.Context, byoMachine *infrastructurev1beta1.ByoMachine) (*unstructured.Unstructured, error) {

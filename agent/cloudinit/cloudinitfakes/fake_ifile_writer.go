@@ -159,10 +159,6 @@ func (fake *FakeIFileWriter) WriteToFileReturnsOnCall(i int, result1 error) {
 func (fake *FakeIFileWriter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.mkdirIfNotExistsMutex.RLock()
-	defer fake.mkdirIfNotExistsMutex.RUnlock()
-	fake.writeToFileMutex.RLock()
-	defer fake.writeToFileMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

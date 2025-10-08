@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
@@ -14,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -43,6 +45,14 @@ const (
 	bootstrapSentinelFile = "/run/cluster-api/bootstrap-success.complete"
 	// KubeadmResetCommand is the command to run to force reset/remove nodes' local file system of the files created by kubeadm
 	KubeadmResetCommand = "kubeadm reset --force"
+	// KubeadmControlPlaneKind is the Kind for KubeadmControlPlane
+	KubeadmControlPlaneKind = "KubeadmControlPlane"
+	// KubeletUpgradeTimeout is the timeout for upgrading the kubelet
+	KubeletUpgradeTimeout = 5 * time.Minute
+	// ControlPlaneUpgradeTimeout is the timeout for upgrading the control plane
+	ControlPlaneUpgradeTimeout = 15 * time.Minute
+	// WorkerNodeUpgradeTimeout is the timeout for upgrading the worker node
+	WorkerNodeUpgradeTimeout = 5 * time.Minute
 )
 
 // Reconcile handles events for the ByoHost that is registered by this agent process
@@ -134,14 +144,29 @@ func (r *HostReconciler) reconcileNormal(ctx context.Context, byoHost *infrastru
 			return ctrl.Result{}, err
 		}
 
-		err = r.bootstrapK8sNode(ctx, bootstrapScript, byoHost)
-		if err != nil {
-			logger.Error(err, "error in bootstrapping k8s node")
-			r.Recorder.Event(byoHost, corev1.EventTypeWarning, "BootstrapK8sNodeFailed", "k8s Node Bootstrap failed")
-			_ = r.resetNode(ctx, byoHost)
-			conditions.MarkFalse(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded, infrastructurev1beta1.CloudInitExecutionFailedReason, clusterv1.ConditionSeverityError, "")
-			return ctrl.Result{}, err
+		if _, err := os.Stat(bootstrapSentinelFile); err == nil {
+			// Node is already initialized, check if upgrade is needed
+			logger.Info("Node already initialized, checking for upgrade")
+			result, err := r.upgradeK8sNode(ctx, byoHost)
+			if err != nil {
+				logger.Error(err, "error in upgrading k8s node")
+				r.Recorder.Event(byoHost, corev1.EventTypeWarning, "UpgradeK8sNodeFailed", "k8s Node Upgrade failed")
+				return ctrl.Result{}, err
+			}
+			if result.RequeueAfter > 0 {
+				return result, nil
+			}
+		} else {
+			err = r.bootstrapK8sNode(ctx, bootstrapScript)
+			if err != nil {
+				logger.Error(err, "error in bootstrapping k8s node")
+				r.Recorder.Event(byoHost, corev1.EventTypeWarning, "BootstrapK8sNodeFailed", "k8s Node Bootstrap failed")
+				_ = r.resetNode(ctx, byoHost)
+				conditions.MarkFalse(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded, infrastructurev1beta1.CloudInitExecutionFailedReason, clusterv1.ConditionSeverityError, "")
+				return ctrl.Result{}, err
+			}
 		}
+
 		logger.Info("k8s node successfully bootstrapped")
 		r.Recorder.Event(byoHost, corev1.EventTypeNormal, "BootstrapK8sNodeSucceeded", "k8s Node Bootstraped")
 		conditions.MarkTrue(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded)
@@ -247,9 +272,11 @@ func (r *HostReconciler) hostCleanUp(ctx context.Context, byoHost *infrastructur
 
 	k8sComponentsInstallationSucceeded := conditions.Get(byoHost, infrastructurev1beta1.K8sComponentsInstallationSucceeded)
 	if k8sComponentsInstallationSucceeded != nil && k8sComponentsInstallationSucceeded.Status == corev1.ConditionTrue {
-		err := r.resetNode(ctx, byoHost)
-		if err != nil {
-			return err
+		if metav1.HasAnnotation(byoHost.ObjectMeta, infrastructurev1beta1.HostResetAnnotation) {
+			err := r.resetNode(ctx, byoHost)
+			if err != nil {
+				return err
+			}
 		}
 		if r.SkipK8sInstallation {
 			logger.Info("Skipping uninstallation of k8s components")
@@ -262,7 +289,7 @@ func (r *HostReconciler) hostCleanUp(ctx context.Context, byoHost *infrastructur
 			}
 			logger.Info("Executing Uninstall script")
 			uninstallScript := *byoHost.Spec.UninstallationScript
-			uninstallScript, err = r.parseScript(ctx, uninstallScript)
+			uninstallScript, err := r.parseScript(ctx, uninstallScript)
 			if err != nil {
 				logger.Error(err, "error parsing Uninstallation script")
 				return err
@@ -281,14 +308,15 @@ func (r *HostReconciler) hostCleanUp(ctx context.Context, byoHost *infrastructur
 	}
 	conditions.MarkFalse(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded, infrastructurev1beta1.K8sNodeAbsentReason, clusterv1.ConditionSeverityInfo, "")
 
-	err := r.removeSentinelFile(ctx, byoHost)
-	if err != nil {
-		return err
-	}
-
-	err = r.deleteEndpointIP(ctx, byoHost)
-	if err != nil {
-		return err
+	if metav1.HasAnnotation(byoHost.ObjectMeta, infrastructurev1beta1.HostResetAnnotation) {
+		err := r.removeSentinelFile(ctx)
+		if err != nil {
+			return err
+		}
+		err = r.deleteEndpointIP(ctx, byoHost)
+		if err != nil {
+			return err
+		}
 	}
 
 	byoHost.Spec.InstallationSecret = nil
@@ -312,17 +340,7 @@ func (r *HostReconciler) resetNode(ctx context.Context, byoHost *infrastructurev
 	return nil
 }
 
-func (r *HostReconciler) bootstrapK8sNode(ctx context.Context, bootstrapScript string, byoHost *infrastructurev1beta1.ByoHost) error {
-	logger := ctrl.LoggerFrom(ctx)
-	logger.Info("Bootstraping k8s Node")
-	return cloudinit.ScriptExecutor{
-		WriteFilesExecutor:    r.FileWriter,
-		RunCmdExecutor:        r.CmdRunner,
-		ParseTemplateExecutor: r.TemplateParser,
-	}.Execute(bootstrapScript)
-}
-
-func (r *HostReconciler) removeSentinelFile(ctx context.Context, byoHost *infrastructurev1beta1.ByoHost) error {
+func (r *HostReconciler) removeSentinelFile(ctx context.Context) error {
 	logger := ctrl.LoggerFrom(ctx)
 	logger.Info("Removing the bootstrap sentinel file")
 	if _, err := os.Stat(bootstrapSentinelFile); !os.IsNotExist(err) {
@@ -343,11 +361,153 @@ func (r *HostReconciler) deleteEndpointIP(ctx context.Context, byoHost *infrastr
 			for _, network := range networks {
 				_, err := network.DeleteIP()
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to delete endpoint IP %s: %w", IP, err)
 				}
 			}
 		}
 	}
+	return nil
+}
+
+func (r *HostReconciler) bootstrapK8sNode(ctx context.Context, bootstrapScript string) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Node is not initialized, proceed with normal bootstrap
+	logger.Info("Bootstraping k8s Node")
+	return cloudinit.ScriptExecutor{
+		WriteFilesExecutor:    r.FileWriter,
+		RunCmdExecutor:        r.CmdRunner,
+		ParseTemplateExecutor: r.TemplateParser,
+	}.Execute(bootstrapScript)
+}
+
+func (r *HostReconciler) upgradeK8sNode(ctx context.Context, byoHost *infrastructurev1beta1.ByoHost) (ctrl.Result, error) {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Get the target K8s version from the annotation
+	targetVersion, ok := byoHost.Annotations[infrastructurev1beta1.K8sVersionAnnotation]
+	if !ok {
+		logger.Info("No K8s version annotation found, skipping upgrade")
+		return ctrl.Result{}, nil
+	}
+
+	// Check if this is a control plane node or worker node
+	result, isControlPlane := r.isControlPlaneNode(ctx, byoHost)
+	if result.RequeueAfter > 0 {
+		return result, nil
+	}
+
+	if isControlPlane {
+		logger.Info("Upgrading control plane node", "targetVersion", targetVersion)
+		return r.upgradeControlPlaneNode(ctx, targetVersion, byoHost)
+	} else {
+		logger.Info("Upgrading worker node", "targetVersion", targetVersion)
+		return r.upgradeWorkerNode(ctx, targetVersion, byoHost)
+	}
+}
+
+func (r *HostReconciler) isControlPlaneNode(ctx context.Context, byoHost *infrastructurev1beta1.ByoHost) (ctrl.Result, bool) {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Check if the byoHost has a machineRef set
+	if byoHost.Status.MachineRef == nil {
+		logger.Info("MachineRef is not set, cannot determine node role")
+		return ctrl.Result{RequeueAfter: 15 * time.Second}, false
+	}
+
+	// Get the Machine object from the machineRef
+	machine := &clusterv1.Machine{}
+	machineKey := types.NamespacedName{
+		Namespace: byoHost.Status.MachineRef.Namespace,
+		Name:      byoHost.Status.MachineRef.Name,
+	}
+
+	err := r.Client.Get(ctx, machineKey, machine)
+	if err != nil {
+		logger.Error(err, "failed to get Machine object from machineRef")
+		return ctrl.Result{RequeueAfter: 15 * time.Second}, false
+	}
+
+	// Check the owner references of the Machine
+	for _, ownerRef := range machine.GetOwnerReferences() {
+		if ownerRef.Kind == KubeadmControlPlaneKind {
+			logger.Info("Node is a control plane node (Machine owned by KubeadmControlPlane)", "machine", machine.Name)
+			return ctrl.Result{}, true
+		}
+	}
+
+	// Fallback: Check if admin.conf exists on the filesystem
+	// admin.conf is only present on control plane nodes
+	checkCmd := "test -f /etc/kubernetes/admin.conf"
+	err = r.CmdRunner.RunCmd(ctx, checkCmd)
+	if err == nil {
+		logger.Info("Node is a control plane node (has admin.conf)", "machine", machine.Name)
+		return ctrl.Result{}, true
+	}
+
+	logger.Info("Node is not a control plane node (Machine not owned by KubeadmControlPlane)", "machine", machine.Name)
+	return ctrl.Result{}, false
+}
+
+func (r *HostReconciler) upgradeControlPlaneNode(ctx context.Context, targetVersion string, byoHost *infrastructurev1beta1.ByoHost) (ctrl.Result, error) {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Apply the upgrade
+	upgradeCmd := fmt.Sprintf("kubeadm upgrade apply %s --yes --ignore-preflight-errors=CoreDNSUnsupportedPlugins,CoreDNSMigration,CreateJob", targetVersion)
+	logger.Info("Running kubeadm upgrade apply", "command", upgradeCmd)
+
+	if err := r.CmdRunner.RunCmdWithTimeout(ctx, upgradeCmd, ControlPlaneUpgradeTimeout); err != nil {
+		r.Recorder.Event(byoHost, corev1.EventTypeWarning, "UpgradeControlPlaneFailed", fmt.Sprintf("Control plane upgrade to v%s failed", targetVersion))
+		return ctrl.Result{}, errors.Wrapf(err, "failed to upgrade control plane to version %s", targetVersion)
+	}
+
+	// Upgrade kubelet
+	if err := r.upgradeKubelet(ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	logger.Info("Control plane upgrade completed successfully", "version", targetVersion)
+	r.Recorder.Event(byoHost, corev1.EventTypeNormal, "UpgradeControlPlaneSucceeded", fmt.Sprintf("Control plane upgraded to v%s", targetVersion))
+	return ctrl.Result{}, nil
+}
+
+func (r *HostReconciler) upgradeWorkerNode(ctx context.Context, targetVersion string, byoHost *infrastructurev1beta1.ByoHost) (ctrl.Result, error) {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Upgrade kubeadm first
+	logger.Info("Upgrading kubeadm on worker node")
+
+	// For worker nodes, run kubeadm upgrade node
+	upgradeCmd := "kubeadm upgrade node"
+	logger.Info("Running kubeadm upgrade node", "command", upgradeCmd)
+
+	if err := r.CmdRunner.RunCmdWithTimeout(ctx, upgradeCmd, WorkerNodeUpgradeTimeout); err != nil {
+		r.Recorder.Event(byoHost, corev1.EventTypeWarning, "UpgradeWorkerFailed", fmt.Sprintf("Worker node upgrade to v%s failed", targetVersion))
+		return ctrl.Result{}, errors.Wrapf(err, "failed to upgrade worker node to version %s", targetVersion)
+	}
+
+	// Upgrade kubelet
+	if err := r.upgradeKubelet(ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	logger.Info("Worker node upgrade completed successfully", "version", targetVersion)
+	r.Recorder.Event(byoHost, corev1.EventTypeNormal, "UpgradeWorkerSucceeded", fmt.Sprintf("Worker node upgraded to v%s", targetVersion))
+	return ctrl.Result{}, nil
+}
+
+func (r *HostReconciler) upgradeKubelet(ctx context.Context) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// Restart kubelet
+	restartKubeletCmd := "systemctl daemon-reload && systemctl restart kubelet"
+	logger.Info("Restarting kubelet")
+
+	if err := r.CmdRunner.RunCmdWithTimeout(ctx, restartKubeletCmd, KubeletUpgradeTimeout); err != nil {
+		return errors.Wrap(err, "failed to restart kubelet")
+	}
+
+	logger.Info("Kubelet restarted successfully")
 	return nil
 }
 
@@ -371,6 +531,9 @@ func (r *HostReconciler) removeAnnotations(ctx context.Context, byoHost *infrast
 
 	// Remove the cleanup annotation
 	delete(byoHost.Annotations, infrastructurev1beta1.HostCleanupAnnotation)
+
+	// Remove the reset annotation
+	delete(byoHost.Annotations, infrastructurev1beta1.HostResetAnnotation)
 
 	// Remove the cluster version annotation
 	delete(byoHost.Annotations, infrastructurev1beta1.K8sVersionAnnotation)

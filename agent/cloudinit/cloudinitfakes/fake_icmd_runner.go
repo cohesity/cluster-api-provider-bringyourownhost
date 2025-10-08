@@ -4,6 +4,7 @@ package cloudinitfakes
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
 )
@@ -19,6 +20,19 @@ type FakeICmdRunner struct {
 		result1 error
 	}
 	runCmdReturnsOnCall map[int]struct {
+		result1 error
+	}
+	RunCmdWithTimeoutStub        func(context.Context, string, time.Duration) error
+	runCmdWithTimeoutMutex       sync.RWMutex
+	runCmdWithTimeoutArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 time.Duration
+	}
+	runCmdWithTimeoutReturns struct {
+		result1 error
+	}
+	runCmdWithTimeoutReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
@@ -87,11 +101,72 @@ func (fake *FakeICmdRunner) RunCmdReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeICmdRunner) RunCmdWithTimeout(arg1 context.Context, arg2 string, arg3 time.Duration) error {
+	fake.runCmdWithTimeoutMutex.Lock()
+	ret, specificReturn := fake.runCmdWithTimeoutReturnsOnCall[len(fake.runCmdWithTimeoutArgsForCall)]
+	fake.runCmdWithTimeoutArgsForCall = append(fake.runCmdWithTimeoutArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 time.Duration
+	}{arg1, arg2, arg3})
+	stub := fake.RunCmdWithTimeoutStub
+	fakeReturns := fake.runCmdWithTimeoutReturns
+	fake.recordInvocation("RunCmdWithTimeout", []interface{}{arg1, arg2, arg3})
+	fake.runCmdWithTimeoutMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeICmdRunner) RunCmdWithTimeoutCallCount() int {
+	fake.runCmdWithTimeoutMutex.RLock()
+	defer fake.runCmdWithTimeoutMutex.RUnlock()
+	return len(fake.runCmdWithTimeoutArgsForCall)
+}
+
+func (fake *FakeICmdRunner) RunCmdWithTimeoutCalls(stub func(context.Context, string, time.Duration) error) {
+	fake.runCmdWithTimeoutMutex.Lock()
+	defer fake.runCmdWithTimeoutMutex.Unlock()
+	fake.RunCmdWithTimeoutStub = stub
+}
+
+func (fake *FakeICmdRunner) RunCmdWithTimeoutArgsForCall(i int) (context.Context, string, time.Duration) {
+	fake.runCmdWithTimeoutMutex.RLock()
+	defer fake.runCmdWithTimeoutMutex.RUnlock()
+	argsForCall := fake.runCmdWithTimeoutArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeICmdRunner) RunCmdWithTimeoutReturns(result1 error) {
+	fake.runCmdWithTimeoutMutex.Lock()
+	defer fake.runCmdWithTimeoutMutex.Unlock()
+	fake.RunCmdWithTimeoutStub = nil
+	fake.runCmdWithTimeoutReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeICmdRunner) RunCmdWithTimeoutReturnsOnCall(i int, result1 error) {
+	fake.runCmdWithTimeoutMutex.Lock()
+	defer fake.runCmdWithTimeoutMutex.Unlock()
+	fake.RunCmdWithTimeoutStub = nil
+	if fake.runCmdWithTimeoutReturnsOnCall == nil {
+		fake.runCmdWithTimeoutReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.runCmdWithTimeoutReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeICmdRunner) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.runCmdMutex.RLock()
-	defer fake.runCmdMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
