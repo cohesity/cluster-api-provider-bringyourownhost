@@ -132,7 +132,7 @@ var _ = Describe("ByoMachine Controller", func() {
 			WaitForObjectsToBePopulatedInCache(byoHost)
 
 			_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: byoMachineLookupKey})
-			Expect(err).To(MatchError("nodes \"" + byoHost.Name + "\" not found"))
+			Expect(err).To(MatchError(ContainSubstring("nodes \"" + byoHost.Name + "\" not found")))
 		})
 
 		Context("When node.Spec.ProviderID is already set", func() {
@@ -149,6 +149,7 @@ var _ = Describe("ByoMachine Controller", func() {
 			It("should not return error when node.Spec.ProviderID is with correct value", func() {
 				node = builder.Node(defaultNamespace, byoHost.Name).
 					WithProviderID(fmt.Sprintf("%s%s/%s", controllers.ProviderIDPrefix, byoHost.Name, util.RandomString(controllers.ProviderIDSuffixLength))).
+					WithKubeletVersion(testClusterVersion).
 					Build()
 				Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 				_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: byoMachineLookupKey})
@@ -158,6 +159,7 @@ var _ = Describe("ByoMachine Controller", func() {
 			It("should return error when node.Spec.ProviderID has stale value", func() {
 				node = builder.Node(defaultNamespace, byoHost.Name).
 					WithProviderID(fmt.Sprintf("%sanother-host/%s", controllers.ProviderIDPrefix, util.RandomString(controllers.ProviderIDSuffixLength))).
+					WithKubeletVersion(testClusterVersion).
 					Build()
 				Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 				_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: byoMachineLookupKey})
@@ -228,7 +230,7 @@ var _ = Describe("ByoMachine Controller", func() {
 				byoHost = builder.ByoHost(defaultNamespace, "single-available-default-host").Build()
 				Expect(k8sClientUncached.Create(ctx, byoHost)).Should(Succeed())
 
-				node = builder.Node(defaultNamespace, byoHost.Name).Build()
+				node = builder.Node(defaultNamespace, byoHost.Name).WithKubeletVersion(testClusterVersion).Build()
 				Expect(k8sClient.Create(ctx, node)).Should(Succeed())
 				WaitForObjectsToBePopulatedInCache(byoHost)
 
@@ -595,7 +597,7 @@ var _ = Describe("ByoMachine Controller", func() {
 				Expect(k8sClient.Delete(ctx, node)).Should(Succeed())
 
 				_, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: byoMachineLookupKey})
-				Expect(err).Should(MatchError(fmt.Sprintf("nodes %q not found", byoHost.Name)))
+				Expect(err).Should(MatchError(ContainSubstring(fmt.Sprintf("nodes %q not found", byoHost.Name))))
 
 				createdByoMachine := &infrastructurev1beta1.ByoMachine{}
 				err = k8sClientUncached.Get(ctx, byoMachineLookupKey, createdByoMachine)
@@ -709,8 +711,8 @@ var _ = Describe("ByoMachine Controller", func() {
 
 				WaitForObjectsToBePopulatedInCache(byoHost1, byoHost2)
 
-				Expect(k8sClient.Create(ctx, builder.Node(defaultNamespace, byoHost1.Name).Build())).Should(Succeed())
-				Expect(k8sClient.Create(ctx, builder.Node(defaultNamespace, byoHost2.Name).Build())).Should(Succeed())
+				Expect(k8sClient.Create(ctx, builder.Node(defaultNamespace, byoHost1.Name).WithKubeletVersion(testClusterVersion).Build())).Should(Succeed())
+				Expect(k8sClient.Create(ctx, builder.Node(defaultNamespace, byoHost2.Name).WithKubeletVersion(testClusterVersion).Build())).Should(Succeed())
 			})
 
 			It("claims one of the available host", func() {
