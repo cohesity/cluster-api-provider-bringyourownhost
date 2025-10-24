@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -247,9 +248,11 @@ func (r *HostReconciler) hostCleanUp(ctx context.Context, byoHost *infrastructur
 
 	k8sComponentsInstallationSucceeded := conditions.Get(byoHost, infrastructurev1beta1.K8sComponentsInstallationSucceeded)
 	if k8sComponentsInstallationSucceeded != nil && k8sComponentsInstallationSucceeded.Status == corev1.ConditionTrue {
-		err := r.resetNode(ctx, byoHost)
-		if err != nil {
-			return err
+		if metav1.HasAnnotation(byoHost.ObjectMeta, infrastructurev1beta1.HostResetAnnotation) {
+			err := r.resetNode(ctx, byoHost)
+			if err != nil {
+				return err
+			}
 		}
 		if r.SkipK8sInstallation {
 			logger.Info("Skipping uninstallation of k8s components")
@@ -262,7 +265,7 @@ func (r *HostReconciler) hostCleanUp(ctx context.Context, byoHost *infrastructur
 			}
 			logger.Info("Executing Uninstall script")
 			uninstallScript := *byoHost.Spec.UninstallationScript
-			uninstallScript, err = r.parseScript(ctx, uninstallScript)
+			uninstallScript, err := r.parseScript(ctx, uninstallScript)
 			if err != nil {
 				logger.Error(err, "error parsing Uninstallation script")
 				return err
@@ -281,14 +284,15 @@ func (r *HostReconciler) hostCleanUp(ctx context.Context, byoHost *infrastructur
 	}
 	conditions.MarkFalse(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded, infrastructurev1beta1.K8sNodeAbsentReason, clusterv1.ConditionSeverityInfo, "")
 
-	err := r.removeSentinelFile(ctx, byoHost)
-	if err != nil {
-		return err
-	}
-
-	err = r.deleteEndpointIP(ctx, byoHost)
-	if err != nil {
-		return err
+	if metav1.HasAnnotation(byoHost.ObjectMeta, infrastructurev1beta1.HostResetAnnotation) {
+		err := r.removeSentinelFile(ctx, byoHost)
+		if err != nil {
+			return err
+		}
+		err = r.deleteEndpointIP(ctx, byoHost)
+		if err != nil {
+			return err
+		}
 	}
 
 	byoHost.Spec.InstallationSecret = nil
@@ -371,6 +375,9 @@ func (r *HostReconciler) removeAnnotations(ctx context.Context, byoHost *infrast
 
 	// Remove the cleanup annotation
 	delete(byoHost.Annotations, infrastructurev1beta1.HostCleanupAnnotation)
+
+	// Remove the reset annotation
+	delete(byoHost.Annotations, infrastructurev1beta1.HostResetAnnotation)
 
 	// Remove the cluster version annotation
 	delete(byoHost.Annotations, infrastructurev1beta1.K8sVersionAnnotation)
