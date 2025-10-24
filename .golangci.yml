@@ -99,6 +99,20 @@ linters:
         - return
       ignored-functions:
         - log.*
+    depguard:
+      rules:
+        Main:
+          allow:
+            - $gostd
+            - github.com/cohesity
+            - github.com/go-logr
+            - github.com/kube-vip
+            - github.com/Masterminds/semver/v3
+            - github.com/onsi
+            - github.com/pkg/errors
+            - golang.org/x
+            - k8s.io
+            - sigs.k8s.io
     misspell:
       locale: US
     nolintlint:
