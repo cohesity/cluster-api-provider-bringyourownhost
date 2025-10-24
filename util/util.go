@@ -6,7 +6,9 @@ package util
 
 import (
 	"context"
+	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,4 +38,13 @@ func GetByoMachineByName(ctx context.Context, c client.Client, namespace, name s
 		return nil, err
 	}
 	return m, nil
+}
+
+func GetNodeForByoHost(ctx context.Context, c client.Client, byoHost *infrastructurev1beta1.ByoHost) (*corev1.Node, error) {
+	node := &corev1.Node{}
+	key := client.ObjectKey{Name: byoHost.Name, Namespace: byoHost.Namespace}
+	if err := c.Get(ctx, key, node); err != nil {
+		return nil, fmt.Errorf("failed to get node for ByoHost: %w", err)
+	}
+	return node, nil
 }
