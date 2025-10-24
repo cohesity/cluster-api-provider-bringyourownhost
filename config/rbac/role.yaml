@@ -82,6 +82,7 @@ rules:
   resources:
   - machines
   - machines/status
+  - machinesets
   verbs:
   - get
   - list

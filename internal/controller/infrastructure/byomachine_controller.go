@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -26,6 +27,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/cluster-api/controllers/remote"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -49,7 +51,17 @@ const (
 	RequeueForbyohost = 10 * time.Second
 	// RequeueInstallerConfigTime requeue delay for installer config
 	RequeueInstallerConfigTime = 10 * time.Second
+	// KubeadmControlPlaneKind is the Kind for KubeadmControlPlane
+	KubeadmControlPlaneKind = "KubeadmControlPlane"
+	// MachineDeploymentKind is the Kind for MachineDeployment
+	MachineSetKind = "MachineSet"
 )
+
+var allMachinePodConditions = []clusterv1.ConditionType{
+	controlplanev1.MachineAPIServerPodHealthyCondition,
+	controlplanev1.MachineControllerManagerPodHealthyCondition,
+	controlplanev1.MachineSchedulerPodHealthyCondition,
+}
 
 // ByoMachineReconciler reconciles a ByoMachine object
 type ByoMachineReconciler struct {
@@ -67,6 +79,7 @@ type ByoMachineReconciler struct {
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=*,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;machines,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machines;machines/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinesets,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
@@ -289,6 +302,24 @@ func (r *ByoMachineReconciler) reconcileNormal(ctx context.Context, machineScope
 		}
 	}
 
+	result, err := r.checkNodeVersionMatch(ctx, machineScope)
+	if err != nil {
+		return result, err
+	}
+
+	if result.RequeueAfter > 0 {
+		return result, nil
+	}
+
+	result, err = r.checkControlPlanePodsHealthy(ctx, machineScope)
+	if err != nil {
+		return result, err
+	}
+
+	if result.RequeueAfter > 0 {
+		return result, nil
+	}
+
 	logger.Info("Updating Node with ProviderID")
 	return r.updateNodeProviderID(ctx, machineScope)
 }
@@ -312,6 +343,89 @@ func (r *ByoMachineReconciler) updateNodeProviderID(ctx context.Context, machine
 	machineScope.ByoMachine.Status.Ready = true
 	conditions.MarkTrue(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady)
 	r.Recorder.Eventf(machineScope.ByoMachine, corev1.EventTypeNormal, "NodeProvisionedSucceeded", "Provisioned Node %s", machineScope.ByoHost.Name)
+	return ctrl.Result{}, nil
+}
+
+// checkNodeVersionMatch verifies that the node's kubelet version matches the desired version in the machine spec.
+// This makes sure that unless all the control plane components and kubelet are upgraded to the desired version,
+// the machine will not be marked as provisioned.
+func (r *ByoMachineReconciler) checkNodeVersionMatch(ctx context.Context, machineScope *byoMachineScope) (ctrl.Result, error) {
+	logger := log.FromContext(ctx).WithValues("cluster", machineScope.Cluster.Name)
+
+	remoteClient, err := r.getRemoteClient(ctx, machineScope.ByoMachine)
+	if err != nil {
+		logger.Error(err, "failed to get remote client for version check")
+		return ctrl.Result{}, err
+	}
+
+	node := &corev1.Node{}
+	nodeKey := client.ObjectKey{Name: machineScope.ByoHost.Name, Namespace: machineScope.ByoHost.Namespace}
+	err = remoteClient.Get(ctx, nodeKey, node)
+	if err != nil {
+		logger.Error(err, "failed to get node for version check")
+		return ctrl.Result{}, fmt.Errorf("failed to get node for version check %v: %w", nodeKey, err)
+	}
+
+	// Extract the desired version from machine spec
+	desiredVersion := *machineScope.Machine.Spec.Version
+	// Get the node kubelet version
+	nodeVersion := node.Status.NodeInfo.KubeletVersion
+
+	// Parse versions using semantic versioning
+	desiredSemVer, err := semver.NewVersion(desiredVersion)
+	if err != nil {
+		logger.Error(err, "failed to parse desired version", "desiredVersion", desiredVersion)
+		return ctrl.Result{}, fmt.Errorf("failed to parse desired version %s: %w", desiredVersion, err)
+	}
+
+	nodeSemVer, err := semver.NewVersion(nodeVersion)
+	if err != nil {
+		logger.Error(err, "failed to parse node version", "nodeVersion", nodeVersion)
+		return ctrl.Result{}, fmt.Errorf("failed to parse node version %s: %w", nodeVersion, err)
+	}
+
+	// Compare major.minor versions
+	desiredMajorMinor := fmt.Sprintf("%d.%d", desiredSemVer.Major(), desiredSemVer.Minor())
+	nodeMajorMinor := fmt.Sprintf("%d.%d", nodeSemVer.Major(), nodeSemVer.Minor())
+
+	if desiredMajorMinor != nodeMajorMinor {
+		logger.Info("Node major.minor version does not match machine spec version, requeuing",
+			"nodeVersion", nodeVersion, "nodeMajorMinor", nodeMajorMinor,
+			"desiredVersion", desiredVersion, "desiredMajorMinor", desiredMajorMinor)
+		return ctrl.Result{RequeueAfter: 15 * time.Second}, nil
+	}
+	logger.Info("Node major.minor version matches machine spec version",
+		"nodeVersion", nodeVersion, "nodeMajorMinor", nodeMajorMinor,
+		"desiredVersion", desiredVersion, "desiredMajorMinor", desiredMajorMinor)
+
+	return ctrl.Result{}, nil
+}
+
+// checkControlPlanePodsHealthy checks if all the control plane components are healthy.
+// This makes sure that unless all the control plane components are healthy, the machine will not be marked as provisioned.
+func (r *ByoMachineReconciler) checkControlPlanePodsHealthy(ctx context.Context, machineScope *byoMachineScope) (ctrl.Result, error) {
+	logger := log.FromContext(ctx).WithValues("cluster", machineScope.Cluster.Name)
+
+	machine := &clusterv1.Machine{}
+	machineKey := client.ObjectKey{Name: machineScope.Machine.Name, Namespace: machineScope.Machine.Namespace}
+	err := r.Get(ctx, machineKey, machine)
+	if err != nil {
+		logger.Error(err, "failed to get machine for control plane pods check")
+		return ctrl.Result{}, fmt.Errorf("failed to get machine for control plane pods check %v: %w", machineKey, err)
+	}
+
+	for _, ownerRef := range machine.GetOwnerReferences() {
+		if ownerRef.Kind == KubeadmControlPlaneKind {
+			logger.Info("Node is a control plane node (Machine owned by KubeadmControlPlane)", "machine", machine.Name)
+			for _, condition := range allMachinePodConditions {
+				if conditions.IsFalse(machine, condition) {
+					logger.Info("Control plane pod is not healthy, requeuing", "condition", condition)
+					return ctrl.Result{RequeueAfter: 15 * time.Second}, nil
+				}
+			}
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
