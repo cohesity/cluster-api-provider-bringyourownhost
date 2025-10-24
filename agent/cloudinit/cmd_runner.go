@@ -5,6 +5,7 @@ package cloudinit
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 )
@@ -24,7 +25,7 @@ func (r CmdRunner) RunCmd(ctx context.Context, cmd string) error {
 	command.Stderr = os.Stderr
 	command.Stdout = os.Stdout
 	if err := command.Run(); err != nil {
-		return err
+		return fmt.Errorf("failed to run command: %s: %w", cmd, err)
 	}
 	return nil
 }
