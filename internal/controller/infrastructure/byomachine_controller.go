@@ -595,15 +595,113 @@ func ByoHostToByoMachineMapFunc(gvk schema.GroupVersionKind) handler.MapFunc {
 }
 
 func (r *ByoMachineReconciler) markHostForCleanup(ctx context.Context, machineScope *byoMachineScope) error {
+	logger := log.FromContext(ctx)
+
+	// Check if the Machine's owner (KubeadmControlPlane or MachineDeployment) is marked for deletion
+	machineOwnerMarkedForDeletion := r.isMachineOwnerMarkedForDeletion(ctx, machineScope)
+
+	// Check if the Node corresponding to the machine is marked for deletion
+	nodeMarkedForDeletion := r.isNodeMarkedForDeletion(ctx, machineScope)
+
 	helper, _ := patch.NewHelper(machineScope.ByoHost, r.Client)
 
 	if machineScope.ByoHost.Annotations == nil {
 		machineScope.ByoHost.Annotations = map[string]string{}
 	}
+
+	// Only add cleanup annotation if Machine owner or Node is marked for deletion
+	if machineOwnerMarkedForDeletion || nodeMarkedForDeletion {
+		logger.Info("Adding host reset annotation", "machineOwnerMarkedForDeletion", machineOwnerMarkedForDeletion, "nodeMarkedForDeletion", nodeMarkedForDeletion)
+		machineScope.ByoHost.Annotations[infrastructurev1beta1.HostResetAnnotation] = ""
+	}
+
+	logger.Info("Adding host cleanup annotation", "machineOwnerMarkedForDeletion", machineOwnerMarkedForDeletion, "nodeMarkedForDeletion", nodeMarkedForDeletion)
+
 	machineScope.ByoHost.Annotations[infrastructurev1beta1.HostCleanupAnnotation] = ""
 
 	// Issue the patch for byohost
 	return helper.Patch(ctx, machineScope.ByoHost)
+}
+
+// isMachineOwnerMarkedForDeletion checks if the Machine or its owner (KubeadmControlPlane or MachineDeployment)
+// is marked for deletion by checking the deletion timestamp
+func (r *ByoMachineReconciler) isMachineOwnerMarkedForDeletion(ctx context.Context, machineScope *byoMachineScope) bool {
+	logger := log.FromContext(ctx)
+
+	if machineScope.Machine == nil {
+		return false
+	}
+
+	// Check if Machine itself is marked for deletion
+	if !machineScope.Machine.DeletionTimestamp.IsZero() {
+		// Check the owner of the Machine
+		for _, ownerRef := range machineScope.Machine.GetOwnerReferences() {
+			if ownerRef.Kind != KubeadmControlPlaneKind && ownerRef.Kind != MachineSetKind {
+				continue
+			}
+			// Fetch the owner object
+			owner := &unstructured.Unstructured{}
+			owner.SetAPIVersion(ownerRef.APIVersion)
+			owner.SetKind(ownerRef.Kind)
+			ownerKey := client.ObjectKey{
+				Namespace: machineScope.Machine.Namespace,
+				Name:      ownerRef.Name,
+			}
+
+			err := r.Get(ctx, ownerKey, owner)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					logger.Info("Machine owner not found, considered removed already",
+						"ownerKind", ownerRef.Kind, "ownerName", ownerRef.Name)
+					return true
+				}
+				logger.Info("Unable to get Machine owner to check deletion status",
+					"ownerKind", ownerRef.Kind, "ownerName", ownerRef.Name, "error", err)
+			} else if !owner.GetDeletionTimestamp().IsZero() {
+				logger.Info("Machine owner is marked for deletion",
+					"ownerKind", ownerRef.Kind, "ownerName", ownerRef.Name)
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// isNodeMarkedForDeletion checks if the Node corresponding to the machine is marked for deletion
+// in the workload cluster by checking the deletion timestamp
+func (r *ByoMachineReconciler) isNodeMarkedForDeletion(ctx context.Context, machineScope *byoMachineScope) bool {
+	logger := log.FromContext(ctx)
+
+	if machineScope.ByoHost == nil {
+		return false
+	}
+
+	remoteClient, err := r.getRemoteClient(ctx, machineScope.ByoMachine)
+	if err != nil {
+		logger.Info("Unable to get remote client to check node deletion status", "error", err)
+		return false
+	}
+
+	node := &corev1.Node{}
+	nodeKey := client.ObjectKey{Name: machineScope.ByoHost.Name}
+	err = remoteClient.Get(ctx, nodeKey, node)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Info("Node not found - considered deleted", "node", nodeKey)
+			return true
+		}
+		// Node not found or error getting it - not marked for deletion
+		logger.Info("Node not found or error getting it - not marked for deletion", "error", err, "node", nodeKey)
+		return false
+	}
+
+	if !node.DeletionTimestamp.IsZero() {
+		logger.Info("Node is marked for deletion", "node", nodeKey)
+		return true
+	}
+
+	return false
 }
 
 func (r *ByoMachineReconciler) getInstallerConfig(ctx context.Context, byoMachine *infrastructurev1beta1.ByoMachine) (*unstructured.Unstructured, error) {
