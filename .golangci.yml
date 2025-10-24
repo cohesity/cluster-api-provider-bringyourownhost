@@ -122,6 +122,70 @@ linters-settings:
   gofmt:
     # simplify code: gofmt with `-s` option, true by default
     simplify: true
+    depguard:
+      rules:
+        Main:
+          allow:
+            - $gostd
+            - github.com/cohesity
+            - github.com/go-logr
+            - github.com/kube-vip
+            - github.com/Masterminds/semver/v3
+            - github.com/onsi
+            - github.com/pkg/errors
+            - golang.org/x
+            - k8s.io
+            - sigs.k8s.io
+    misspell:
+      locale: US
+    nolintlint:
+      allow-unused: false # report any unused nolint directives
+      require-explanation: false # don't require an explanation for nolint directives
+      require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+    whitespace:
+      multi-func: true
+    revive:
+      rules:
+        - name: comment-spacings
+        - name: import-shadowing
+  exclusions:
+    generated: lax
+    rules:
+      - path: api/*
+        linters:
+          - lll
+      - path: internal/*
+        linters:
+          - dupl
+          - lll
+      - path: _test\.go
+        linters:
+          - dupl
+          - gosec
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gofumpt
+  settings:
+    gofmt:
+      # simplify code: gofmt with `-s` option, true by default
+      simplify: true
+    goimports:
+      local-prefixes:
+        - github.com/cohesity
+    gofumpt:
+      extra-rules: false # don't enable extra rules, which are not in gofumpt by default
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   exclude-rules:
     # Exclude some linters from running on tests files.
