@@ -47,6 +47,7 @@ use_repo(
     "com_github_go_logr_logr",
     "com_github_jackpal_gateway",
     "com_github_kube_vip_kube_vip",
+    "com_github_masterminds_semver_v3",
     "com_github_maxbrunsfeld_counterfeiter_v6",
     "com_github_mikefarah_yq_v4",
     "com_github_onsi_ginkgo_v2",
