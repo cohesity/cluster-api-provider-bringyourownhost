@@ -38,7 +38,7 @@ var _ = Describe("K8sInstallerConfig Controller", func() {
 		byoMachineLookupKey         types.NamespacedName
 		k8sInstallerConfigLookupKey types.NamespacedName
 		installerSecretLookupKey    types.NamespacedName
-		testClusterVersion          = "v1.22.1_xyz"
+		testClusterVersion          = "v1.22.1-xyz"
 		testBundleRepo              = "test-repo"
 		testBundleType              = "k8s"
 	)
