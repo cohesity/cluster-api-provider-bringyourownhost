@@ -6,14 +6,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"go/build"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/e2e"
 	"github.com/docker/docker/api/types/container"
 	dClient "github.com/docker/docker/client"
 	. "github.com/onsi/ginkgo/v2"
@@ -28,6 +27,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version"
+	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/e2e"
 )
 
 var (
@@ -102,7 +105,21 @@ var _ = BeforeSuite(func() {
 	dockerClient, err = dClient.NewClientWithOpts(dClient.FromEnv, dClient.WithAPIVersionNegotiation())
 	Expect(err).NotTo(HaveOccurred())
 
-	pathToHostAgentBinary, err = gexec.Build("github.com/cohesity/cluster-api-provider-bringyourownhost/agent")
+	// Set version variables for the agent binary
+	version.GitMajor = "1"
+	version.GitMinor = "0"
+	version.GitVersion = "v1.0.0-test"
+	version.GitCommit = "test-commit"
+	version.GitTreeState = "clean"
+
+	ldflags := fmt.Sprintf("-X 'github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version.GitMajor=%s' "+
+		"-X 'github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version.GitMinor=%s' "+
+		"-X 'github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version.GitVersion=%s' "+
+		"-X 'github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version.GitCommit=%s' "+
+		"-X 'github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version.GitTreeState=%s'",
+		version.GitMajor, version.GitMinor, version.GitVersion, version.GitCommit, version.GitTreeState)
+
+	pathToHostAgentBinary, err = gexec.Build("github.com/cohesity/cluster-api-provider-bringyourownhost/agent", "-ldflags", ldflags)
 	Expect(err).NotTo(HaveOccurred())
 
 	writeKubeConfig()

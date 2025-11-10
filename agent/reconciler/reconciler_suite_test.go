@@ -10,6 +10,7 @@ import (
 
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit/cloudinitfakes"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/reconciler"
+	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version"
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -70,6 +71,13 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
+
+	// Set version variables for the reconciler tests
+	version.GitMajor = "1"
+	version.GitMinor = "0"
+	version.GitVersion = "v1.0.0-test"
+	version.GitCommit = "test-commit"
+	version.GitTreeState = "clean"
 
 	k8sManager, err = ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:  scheme,
