@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -53,6 +54,7 @@ var _ = Describe("ByoMachine Controller", func() {
 			WithClusterName(defaultClusterName).
 			WithClusterVersion(testClusterVersion).
 			WithBootstrapDataSecret(fakeBootstrapSecret).
+			WithOwner("MachineSet", "test-machineset", "test-machineset-uid").
 			Build()
 		Expect(k8sClientUncached.Create(ctx, machine)).Should(Succeed())
 
@@ -92,6 +94,7 @@ var _ = Describe("ByoMachine Controller", func() {
 			machineForByoMachineWithoutCluster := builder.Machine(defaultNamespace, "machine-for-a-byomachine-without-cluster").
 				WithClusterName(defaultClusterName).
 				WithClusterVersion("v1.32.3").
+				WithOwner("MachineSet", "test-machineset-2", "test-machineset-2-uid").
 				Build()
 			Expect(k8sClientUncached.Create(ctx, machineForByoMachineWithoutCluster)).Should(Succeed())
 
@@ -532,6 +535,7 @@ var _ = Describe("ByoMachine Controller", func() {
 				pausedMachine := builder.Machine(defaultNamespace, "paused-machine").
 					WithClusterName(pausedCluster.Name).
 					WithClusterVersion("v1.32.3").
+					WithOwner("MachineSet", "test-machineset-3", "test-machineset-3-uid").
 					Build()
 				Expect(k8sClientUncached.Create(ctx, pausedMachine)).Should(Succeed())
 
@@ -853,6 +857,159 @@ var _ = Describe("ByoMachine Controller", func() {
 				err = k8sClientUncached.Get(ctx, byoMachineLookupKey, createdK8sInstallerConfig)
 				Expect(err).Should(MatchError(fmt.Sprintf("k8sinstallerconfigs.infrastructure.cluster.x-k8s.io %q not found", byoMachineLookupKey.Name)))
 			})
+		})
+	})
+
+	Context("When checking control plane pod health", func() {
+		var (
+			cpMachine       *clusterv1.Machine
+			cpByoMachine    *infrastructurev1beta1.ByoMachine
+			cpByoHost       *infrastructurev1beta1.ByoHost
+			cpMachineLookup types.NamespacedName
+		)
+
+		BeforeEach(func() {
+			ph, err := patch.NewHelper(capiCluster, k8sClientUncached)
+			Expect(err).ShouldNot(HaveOccurred())
+			capiCluster.Status.InfrastructureReady = true
+			Expect(ph.Patch(ctx, capiCluster, patch.WithStatusObservedGeneration{})).Should(Succeed())
+
+			WaitForObjectToBeUpdatedInCache(capiCluster, func(object client.Object) bool {
+				return object.(*clusterv1.Cluster).Status.InfrastructureReady == true
+			})
+
+			// Create a control plane Machine with KubeadmControlPlane owner
+			cpMachine = builder.Machine(defaultNamespace, "cp-machine").
+				WithClusterName(defaultClusterName).
+				WithClusterVersion(testClusterVersion).
+				WithBootstrapDataSecret(fakeBootstrapSecret).
+				WithOwner(controllers.KubeadmControlPlaneKind, "test-kcp", "test-kcp-uid").
+				Build()
+			Expect(k8sClientUncached.Create(ctx, cpMachine)).Should(Succeed())
+
+			cpByoMachine = builder.ByoMachine(defaultNamespace, "cp-byomachine").
+				WithClusterLabel(defaultClusterName).
+				WithOwnerMachine(cpMachine).
+				Build()
+			Expect(k8sClientUncached.Create(ctx, cpByoMachine)).Should(Succeed())
+
+			cpByoHost = builder.ByoHost(defaultNamespace, "cp-byohost").Build()
+			Expect(k8sClientUncached.Create(ctx, cpByoHost)).Should(Succeed())
+
+			cpNode := builder.Node(defaultNamespace, cpByoHost.Name).WithKubeletVersion(testClusterVersion).Build()
+			Expect(k8sClient.Create(ctx, cpNode)).Should(Succeed())
+
+			WaitForObjectsToBePopulatedInCache(cpMachine, cpByoMachine, cpByoHost)
+			cpMachineLookup = types.NamespacedName{Name: cpByoMachine.Name, Namespace: cpByoMachine.Namespace}
+
+			// Attach the ByoHost to the ByoMachine so reconciliation can proceed past host selection
+			ph, err = patch.NewHelper(cpByoHost, k8sClientUncached)
+			Expect(err).ShouldNot(HaveOccurred())
+			cpByoHost.Status.MachineRef = &corev1.ObjectReference{
+				Kind:       "ByoMachine",
+				Namespace:  cpByoMachine.Namespace,
+				Name:       cpByoMachine.Name,
+				UID:        cpByoMachine.UID,
+				APIVersion: cpByoHost.APIVersion,
+			}
+			if cpByoHost.Labels == nil {
+				cpByoHost.Labels = make(map[string]string)
+			}
+			cpByoHost.Labels[infrastructurev1beta1.AttachedByoMachineLabel] = cpByoMachine.Namespace + "." + cpByoMachine.Name
+			Expect(ph.Patch(ctx, cpByoHost, patch.WithStatusObservedGeneration{})).Should(Succeed())
+
+			WaitForObjectToBeUpdatedInCache(cpByoHost, func(object client.Object) bool {
+				return object.(*infrastructurev1beta1.ByoHost).Status.MachineRef != nil
+			})
+		})
+
+		AfterEach(func() {
+			Expect(k8sClientUncached.Delete(ctx, cpByoHost)).ToNot(HaveOccurred())
+		})
+
+		It("should proceed when all control plane pods are healthy", func() {
+			// Set all control plane pod conditions to True
+			ph, err := patch.NewHelper(cpMachine, k8sClientUncached)
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions.MarkTrue(cpMachine, controlplanev1.MachineAPIServerPodHealthyCondition)
+			conditions.MarkTrue(cpMachine, controlplanev1.MachineControllerManagerPodHealthyCondition)
+			conditions.MarkTrue(cpMachine, controlplanev1.MachineSchedulerPodHealthyCondition)
+			Expect(ph.Patch(ctx, cpMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
+
+			WaitForObjectToBeUpdatedInCache(cpMachine, func(object client.Object) bool {
+				m := object.(*clusterv1.Machine)
+				return conditions.IsTrue(m, controlplanev1.MachineAPIServerPodHealthyCondition)
+			})
+
+			res, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cpMachineLookup})
+			Expect(err).ToNot(HaveOccurred())
+			// Should not requeue due to control plane pod health check
+			Expect(res.RequeueAfter).NotTo(Equal(controllers.RequeueTimeInterval))
+		})
+
+		It("should requeue when API server pod is unhealthy", func() {
+			// Set API server condition to False
+			ph, err := patch.NewHelper(cpMachine, k8sClientUncached)
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions.MarkFalse(cpMachine, controlplanev1.MachineAPIServerPodHealthyCondition, "Unhealthy", clusterv1.ConditionSeverityError, "Pod is not healthy")
+			conditions.MarkTrue(cpMachine, controlplanev1.MachineControllerManagerPodHealthyCondition)
+			conditions.MarkTrue(cpMachine, controlplanev1.MachineSchedulerPodHealthyCondition)
+			Expect(ph.Patch(ctx, cpMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
+
+			WaitForObjectToBeUpdatedInCache(cpMachine, func(object client.Object) bool {
+				m := object.(*clusterv1.Machine)
+				return conditions.IsFalse(m, controlplanev1.MachineAPIServerPodHealthyCondition)
+			})
+
+			res, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cpMachineLookup})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.RequeueAfter).To(Equal(controllers.RequeueTimeInterval))
+		})
+
+		It("should requeue when controller manager pod is unhealthy", func() {
+			// Set controller manager condition to False
+			ph, err := patch.NewHelper(cpMachine, k8sClientUncached)
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions.MarkTrue(cpMachine, controlplanev1.MachineAPIServerPodHealthyCondition)
+			conditions.MarkFalse(cpMachine, controlplanev1.MachineControllerManagerPodHealthyCondition, "Unhealthy", clusterv1.ConditionSeverityError, "Pod is not healthy")
+			conditions.MarkTrue(cpMachine, controlplanev1.MachineSchedulerPodHealthyCondition)
+			Expect(ph.Patch(ctx, cpMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
+
+			WaitForObjectToBeUpdatedInCache(cpMachine, func(object client.Object) bool {
+				m := object.(*clusterv1.Machine)
+				return conditions.IsFalse(m, controlplanev1.MachineControllerManagerPodHealthyCondition)
+			})
+
+			res, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cpMachineLookup})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.RequeueAfter).To(Equal(controllers.RequeueTimeInterval))
+		})
+
+		It("should requeue when scheduler pod is unhealthy", func() {
+			// Set scheduler condition to False
+			ph, err := patch.NewHelper(cpMachine, k8sClientUncached)
+			Expect(err).ShouldNot(HaveOccurred())
+			conditions.MarkTrue(cpMachine, controlplanev1.MachineAPIServerPodHealthyCondition)
+			conditions.MarkTrue(cpMachine, controlplanev1.MachineControllerManagerPodHealthyCondition)
+			conditions.MarkFalse(cpMachine, controlplanev1.MachineSchedulerPodHealthyCondition, "Unhealthy", clusterv1.ConditionSeverityError, "Pod is not healthy")
+			Expect(ph.Patch(ctx, cpMachine, patch.WithStatusObservedGeneration{})).Should(Succeed())
+
+			WaitForObjectToBeUpdatedInCache(cpMachine, func(object client.Object) bool {
+				m := object.(*clusterv1.Machine)
+				return conditions.IsFalse(m, controlplanev1.MachineSchedulerPodHealthyCondition)
+			})
+
+			res, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cpMachineLookup})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.RequeueAfter).To(Equal(controllers.RequeueTimeInterval))
+		})
+
+		It("should proceed when control plane pod conditions are not set", func() {
+			// Don't set any conditions - they will be nil, not False
+			res, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: cpMachineLookup})
+			Expect(err).ToNot(HaveOccurred())
+			// Should not requeue due to missing conditions (nil != False)
+			Expect(res.RequeueAfter).NotTo(Equal(controllers.RequeueTimeInterval))
 		})
 	})
 
