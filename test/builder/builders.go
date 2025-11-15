@@ -14,6 +14,7 @@ import (
 	certv1 "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
@@ -135,6 +136,9 @@ type MachineBuilder struct {
 	cluster             string
 	version             string
 	bootstrapDataSecret string
+	ownerKind           string
+	ownerName           string
+	ownerUID            string
 }
 
 // ByoClusterBuilder holds the variables and objects required to build an infrastructurev1beta1.ByoCluster
@@ -230,6 +234,14 @@ func (m *MachineBuilder) WithBootstrapDataSecret(secret string) *MachineBuilder 
 	return m
 }
 
+// WithOwner adds the passed owner reference to the MachineBuilder
+func (m *MachineBuilder) WithOwner(kind, name, uid string) *MachineBuilder {
+	m.ownerKind = kind
+	m.ownerName = name
+	m.ownerUID = uid
+	return m
+}
+
 // Build returns a Machine with the attributes added to the MachineBuilder
 func (m *MachineBuilder) Build() *clusterv1.Machine {
 	machine := &clusterv1.Machine{
@@ -249,6 +261,17 @@ func (m *MachineBuilder) Build() *clusterv1.Machine {
 	if m.bootstrapDataSecret != "" {
 		machine.Spec.Bootstrap = clusterv1.Bootstrap{
 			DataSecretName: &m.bootstrapDataSecret,
+		}
+	}
+	if m.ownerKind != "" && m.ownerName != "" {
+		machine.OwnerReferences = []metav1.OwnerReference{
+			{
+				Kind:       m.ownerKind,
+				Name:       m.ownerName,
+				APIVersion: clusterv1.GroupVersion.String(),
+				UID:        types.UID(m.ownerUID),
+				Controller: func() *bool { b := true; return &b }(),
+			},
 		}
 	}
 
