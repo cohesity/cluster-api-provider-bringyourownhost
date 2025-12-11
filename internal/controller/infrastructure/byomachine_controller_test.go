@@ -39,7 +39,7 @@ var _ = Describe("ByoMachine Controller", func() {
 		k8sInstallerConfigTemplate *infrastructurev1beta1.K8sInstallerConfigTemplate
 		k8sInstallerConfig         *infrastructurev1beta1.K8sInstallerConfig
 		byoHost                    *infrastructurev1beta1.ByoHost
-		testClusterVersion         = "v1.22.1-xyz"
+		testClusterVersion         = "v1.22.1_xyz"
 	)
 
 	BeforeEach(func() {

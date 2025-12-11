@@ -18,7 +18,6 @@ var _ = Describe("Help flag for host agent", func() {
 		expectedOptions := []string{
 			"--bootstrap-kubeconfig string",
 			"--certExpiryDuration int",
-			"--control-plane-ignore-preflight-errors string",
 			"--downloadpath string",
 			"--kubeconfig string",
 			"--label labelFlags",

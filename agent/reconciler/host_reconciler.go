@@ -41,8 +41,8 @@ type HostReconciler struct {
 	TemplateParser                    cloudinit.ITemplateParser
 	Recorder                          record.EventRecorder
 	DownloadPath                      string
-	ControlPlaneIgnorePreflightErrors string
 	SkipK8sInstallation               bool
+	ControlPlaneIgnorePreflightErrors string
 }
 
 const (
@@ -181,11 +181,11 @@ func (r *HostReconciler) reconcileNormal(ctx context.Context, byoHost *infrastru
 		if metav1.HasAnnotation(byoHost.ObjectMeta, infrastructurev1beta1.K8sNodeBootstrappedAnnotation) {
 			// Node is already initialized, check if upgrade is needed
 			logger.Info("Node already initialized, checking for upgrade")
-			result, errUpgrade := r.upgradeK8sNode(ctx, byoHost)
-			if errUpgrade != nil {
-				logger.Error(errUpgrade, "error in upgrading k8s node")
+			result, err := r.upgradeK8sNode(ctx, byoHost)
+			if err != nil {
+				logger.Error(err, "error in upgrading k8s node")
 				r.Recorder.Event(byoHost, corev1.EventTypeWarning, "UpgradeK8sNodeFailed", "k8s Node Upgrade failed")
-				return ctrl.Result{}, errUpgrade
+				return ctrl.Result{}, err
 			}
 			if result.RequeueAfter > 0 {
 				return result, nil
