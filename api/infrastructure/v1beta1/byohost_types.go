@@ -24,10 +24,6 @@ const (
 	AttachedByoMachineLabel = "byoh.infrastructure.cluster.x-k8s.io/byomachine-name"
 	// BundleLookupBaseRegistryAnnotation annotation used to store the base registry for the bundle lookup
 	BundleLookupBaseRegistryAnnotation = "byoh.infrastructure.cluster.x-k8s.io/bundle-registry"
-	// AgentVersionAnnotation annotation used to store the version of the byohost agent
-	AgentVersionAnnotation = "byoh.infrastructure.cluster.x-k8s.io/agent-version"
-	// K8sNodeBootstrappedAnnotation annotation used to indicate that kubeadm init/join has been successfully completed
-	K8sNodeBootstrappedAnnotation = "byoh.infrastructure.cluster.x-k8s.io/node-bootstrapped"
 )
 
 // ByoHostSpec defines the desired state of ByoHost.
