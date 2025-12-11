@@ -21,7 +21,6 @@ go_library(
         "//installer",
         "//util",
         "@com_github_go_logr_logr//:logr",
-        "@com_github_masterminds_semver_v3//:semver",
         "@com_github_pkg_errors//:errors",
         "@io_k8s_api//certificates/v1:certificates",
         "@io_k8s_api//core/v1:core",
