@@ -28,7 +28,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/controllers/external"
 	"sigs.k8s.io/cluster-api/controllers/remote"
-	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/conditions"
@@ -54,23 +53,14 @@ const (
 	RequeueInstallerConfigTime = 10 * time.Second
 	// KubeadmControlPlaneKind is the Kind for KubeadmControlPlane
 	KubeadmControlPlaneKind = "KubeadmControlPlane"
+	// MachineDeploymentKind is the Kind for MachineDeployment
+	MachineSetKind = "MachineSet"
 	// Requeue Time Interval
 	RequeueTimeInterval = 15 * time.Second
 )
 
-var (
-	// ErrMachineVersionNotSet is returned when machine spec version is not set
-	ErrMachineVersionNotSet = errors.New("machine spec version is not set")
-
-	// ErrMachineOwnerNotSet is returned when machine has no owner reference
-	ErrMachineOwnerNotSet = errors.New("machine has no owner, cannot determine if owner is marked for deletion")
-
-	allMachinePodConditions = []clusterv1.ConditionType{
-		controlplanev1.MachineAPIServerPodHealthyCondition,
-		controlplanev1.MachineControllerManagerPodHealthyCondition,
-		controlplanev1.MachineSchedulerPodHealthyCondition,
-	}
-)
+// ErrMachineVersionNotSet is returned when machine spec version is not set
+var ErrMachineVersionNotSet = errors.New("machine spec version is not set")
 
 // ByoMachineReconciler reconciles a ByoMachine object
 type ByoMachineReconciler struct {
@@ -320,15 +310,6 @@ func (r *ByoMachineReconciler) reconcileNormal(ctx context.Context, machineScope
 		return result, nil
 	}
 
-	result, err = r.checkControlPlanePodsHealthy(ctx, machineScope)
-	if err != nil {
-		return result, err
-	}
-
-	if result.RequeueAfter > 0 {
-		return result, nil
-	}
-
 	logger.Info("Updating Node with ProviderID")
 	return r.updateNodeProviderID(ctx, machineScope)
 }
@@ -406,33 +387,6 @@ func (r *ByoMachineReconciler) checkNodeVersionMatch(ctx context.Context, machin
 	logger.Info("Node major.minor version matches machine spec version",
 		"nodeVersion", nodeVersion, "nodeMajorMinor", nodeMajorMinor,
 		"desiredVersion", desiredVersion, "desiredMajorMinor", desiredMajorMinor)
-
-	return ctrl.Result{}, nil
-}
-
-// checkControlPlanePodsHealthy checks if all the control plane components are healthy.
-// This makes sure that unless all the control plane components are healthy, the machine will not be marked as provisioned.
-func (r *ByoMachineReconciler) checkControlPlanePodsHealthy(ctx context.Context, machineScope *byoMachineScope) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithValues("cluster", machineScope.Cluster.Name)
-
-	// Check the owner of the Machine
-	ownerRef := metav1.GetControllerOfNoCopy(machineScope.Machine)
-	if ownerRef == nil {
-		logger.Error(nil, "Machine has no owner, cannot determine if owner is marked for deletion.", "machine", machineScope.Machine.Name)
-		return ctrl.Result{}, ErrMachineOwnerNotSet
-	}
-
-	if ownerRef.Kind != KubeadmControlPlaneKind {
-		logger.Info("Machine is not owned by KubeadmControlPlane, skipping control plane pods check")
-		return ctrl.Result{}, nil
-	}
-
-	for _, condition := range allMachinePodConditions {
-		if conditions.IsFalse(machineScope.Machine, condition) {
-			logger.Info("Control plane pod is not healthy, requeuing", "condition", condition)
-			return ctrl.Result{RequeueAfter: RequeueTimeInterval}, nil
-		}
-	}
 
 	return ctrl.Result{}, nil
 }
