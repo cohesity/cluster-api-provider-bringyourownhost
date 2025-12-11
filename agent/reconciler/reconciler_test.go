@@ -490,7 +490,6 @@ runCmd:
 				byoHost.Labels = map[string]string{clusterv1.ClusterNameLabel: "test-cluster"}
 				byoHost.Annotations = map[string]string{
 					infrastructurev1beta1.HostCleanupAnnotation:              "",
-					infrastructurev1beta1.HostResetAnnotation:                "",
 					infrastructurev1beta1.BundleLookupBaseRegistryAnnotation: "projects.blah.com",
 					infrastructurev1beta1.K8sVersionAnnotation:               "1.22",
 				}
