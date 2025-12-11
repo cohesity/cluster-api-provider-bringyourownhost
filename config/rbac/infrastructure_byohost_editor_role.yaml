@@ -34,26 +34,14 @@ rules:
   - patch
   - update
 - apiGroups:
-  - infrastructure.cluster.x-k8s.io
-  resources:
-  - byomachines
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - cluster.x-k8s.io
-  resources:
-  - machines
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - ""
+  - byohosts
   resources:
   - events
   verbs:
   - create
+  - get
+  - list
   - patch
   - update
+  - watch

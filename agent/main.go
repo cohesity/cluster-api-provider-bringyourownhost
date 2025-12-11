@@ -100,7 +100,6 @@ func setupflags() {
 	flag.StringVar(&bootstrapKubeConfig, "bootstrap-kubeconfig", "", "Provide bootstrap kubeconfig for bootstrap token workflow")
 	flag.BoolVar(&secureMetrics, "metrics-secure", false, "If set the metrics endpoint is served securely")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false, "If set, HTTP/2 will be enabled for the metrics and webhook servers")
-	flag.StringVar(&controlPlaneIgnorePreflightErrors, "control-plane-ignore-preflight-errors", "", "Comma separated list of preflight errors to ignore during control plane upgrade")
 
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	hiddenFlags := []string{
@@ -128,18 +127,17 @@ func setupTemplateParser() *cloudinit.TemplateParser {
 }
 
 var (
-	namespace                         string
-	scheme                            *runtime.Scheme
-	labels                            = make(labelFlags)
-	metricsbindaddress                string
-	downloadpath                      string
-	skipInstallation                  bool
-	printVersion                      bool
-	bootstrapKubeConfig               string
-	certExpiryDuration                int64
-	secureMetrics                     bool
-	enableHTTP2                       bool
-	controlPlaneIgnorePreflightErrors string
+	namespace           string
+	scheme              *runtime.Scheme
+	labels              = make(labelFlags)
+	metricsbindaddress  string
+	downloadpath        string
+	skipInstallation    bool
+	printVersion        bool
+	bootstrapKubeConfig string
+	certExpiryDuration  int64
+	secureMetrics       bool
+	enableHTTP2         bool
 )
 
 // TODO - fix logging
@@ -251,14 +249,13 @@ func main() {
 		logger.Info("skip-installation flag set, skipping installer initialisation")
 	}
 	hostReconciler := &reconciler.HostReconciler{
-		Client:                            k8sClient,
-		CmdRunner:                         cloudinit.CmdRunner{},
-		FileWriter:                        cloudinit.FileWriter{},
-		TemplateParser:                    setupTemplateParser(),
-		Recorder:                          mgr.GetEventRecorderFor("hostagent-controller"),
-		SkipK8sInstallation:               skipInstallation,
-		DownloadPath:                      downloadpath,
-		ControlPlaneIgnorePreflightErrors: controlPlaneIgnorePreflightErrors,
+		Client:              k8sClient,
+		CmdRunner:           cloudinit.CmdRunner{},
+		FileWriter:          cloudinit.FileWriter{},
+		TemplateParser:      setupTemplateParser(),
+		Recorder:            mgr.GetEventRecorderFor("hostagent-controller"),
+		SkipK8sInstallation: skipInstallation,
+		DownloadPath:        downloadpath,
 	}
 	if err = hostReconciler.SetupWithManager(context.TODO(), mgr); err != nil {
 		logger.Error(err, "unable to create controller")

@@ -3,7 +3,6 @@ module github.com/cohesity/cluster-api-provider-bringyourownhost
 go 1.24.3
 
 require (
-	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/docker/cli v27.1.1+incompatible
 	github.com/docker/docker v27.1.1+incompatible
 	github.com/go-logr/logr v1.4.2
@@ -37,6 +36,7 @@ require (
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
+	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
