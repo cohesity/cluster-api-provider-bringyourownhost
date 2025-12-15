@@ -7,11 +7,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/cloudinit"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/registration"
-	"github.com/cohesity/cluster-api-provider-bringyourownhost/agent/version"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/common"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
@@ -46,13 +44,6 @@ const (
 	bootstrapSentinelFile = "/run/cluster-api/bootstrap-success.complete"
 	// KubeadmResetCommand is the command to run to force reset/remove nodes' local file system of the files created by kubeadm
 	KubeadmResetCommand = "kubeadm reset --force"
-	// StatusTrue is the value for the true status
-	StatusTrue = string(corev1.ConditionTrue)
-)
-
-var (
-	// ErrAgentVersionNotAvailable is returned when the agent version is not available
-	ErrAgentVersionNotAvailable = errors.New("agent version not available - build issue")
 )
 
 // Reconcile handles events for the ByoHost that is registered by this agent process
@@ -98,15 +89,6 @@ func (r *HostReconciler) reconcileNormal(ctx context.Context, byoHost *infrastru
 	logger := ctrl.LoggerFrom(ctx)
 	logger = logger.WithValues("ByoHost", byoHost.Name)
 	logger.Info("reconcile normal")
-
-	// set bootstrap success annotation
-	r.setBootstrapSuccessAnnotation(ctx, byoHost)
-
-	// Set agent version annotation
-	if err := r.setAgentVersionAnnotation(ctx, byoHost); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to set agent version annotation: %w", err)
-	}
-
 	if byoHost.Status.MachineRef == nil {
 		logger.Info("Machine ref not yet set")
 		conditions.MarkFalse(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded, infrastructurev1beta1.WaitingForMachineRefReason, clusterv1.ConditionSeverityInfo, "")
@@ -164,48 +146,9 @@ func (r *HostReconciler) reconcileNormal(ctx context.Context, byoHost *infrastru
 		logger.Info("k8s node successfully bootstrapped")
 		r.Recorder.Event(byoHost, corev1.EventTypeNormal, "BootstrapK8sNodeSucceeded", "k8s Node Bootstraped")
 		conditions.MarkTrue(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded)
-
-		// Mark the node as bootstrapped
-		metav1.SetMetaDataAnnotation(&byoHost.ObjectMeta, infrastructurev1beta1.K8sNodeBootstrappedAnnotation, metav1.Now().Format(time.RFC3339))
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *HostReconciler) setBootstrapSuccessAnnotation(ctx context.Context, byoHost *infrastructurev1beta1.ByoHost) {
-	logger := ctrl.LoggerFrom(ctx)
-
-	// Check if the K8sNodeBootstrapSucceeded condition is true
-	if !conditions.IsTrue(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded) {
-		return
-	}
-
-	if metav1.HasAnnotation(byoHost.ObjectMeta, infrastructurev1beta1.K8sNodeBootstrappedAnnotation) {
-		return
-	}
-
-	logger.Info("setting bootstrap success annotation")
-
-	metav1.SetMetaDataAnnotation(&byoHost.ObjectMeta, infrastructurev1beta1.K8sNodeBootstrappedAnnotation, StatusTrue)
-}
-
-func (r *HostReconciler) setAgentVersionAnnotation(ctx context.Context, byoHost *infrastructurev1beta1.ByoHost) error {
-	logger := ctrl.LoggerFrom(ctx)
-
-	agentVersion := version.Get().GitVersion
-	if agentVersion == "" {
-		return ErrAgentVersionNotAvailable
-	}
-
-	if byoHost.Annotations == nil {
-		byoHost.Annotations = make(map[string]string)
-	}
-
-	if currentVersion, exists := byoHost.Annotations[infrastructurev1beta1.AgentVersionAnnotation]; !exists || currentVersion != agentVersion {
-		byoHost.Annotations[infrastructurev1beta1.AgentVersionAnnotation] = agentVersion
-		logger.Info("Updated agent version annotation", "version", agentVersion)
-	}
-	return nil
 }
 
 func (r *HostReconciler) executeInstallerController(ctx context.Context, byoHost *infrastructurev1beta1.ByoHost) error {
@@ -441,11 +384,6 @@ func (r *HostReconciler) removeAnnotations(ctx context.Context, byoHost *infrast
 
 	// Remove the bundle registry annotation
 	delete(byoHost.Annotations, infrastructurev1beta1.BundleLookupBaseRegistryAnnotation)
-
-	// Remove the k8s node bootstrapped annotation if the host is marked for reset.
-	if metav1.HasAnnotation(byoHost.ObjectMeta, infrastructurev1beta1.HostResetAnnotation) {
-		delete(byoHost.Annotations, infrastructurev1beta1.K8sNodeBootstrappedAnnotation)
-	}
 }
 
 // checkAndPopulateUninstallScriptFromInstallSecret populates the uninstall script on
