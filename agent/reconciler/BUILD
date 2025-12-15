@@ -11,7 +11,6 @@ go_library(
     deps = [
         "//agent/cloudinit",
         "//agent/registration",
-        "//agent/version",
         "//api/infrastructure/v1beta1",
         "//common",
         "@com_github_kube_vip_kube_vip//pkg/vip",
