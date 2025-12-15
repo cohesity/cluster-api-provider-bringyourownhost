@@ -6,7 +6,6 @@ package util
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -15,20 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
-)
-
-// ByoMachineKind is the Kind for ByoMachine
-const ByoMachineKind = "ByoMachine"
-
-var (
-	// ErrMachineRefNotSet is returned when machineRef is not set in ByoHost status
-	ErrMachineRefNotSet = errors.New("machineRef is not set in ByoHost status")
-
-	// ErrMachineRefIncorrectKind is returned when machineRef has incorrect kind
-	ErrMachineRefIncorrectKind = errors.New("machineRef has incorrect kind")
-
-	// ErrMachineRefIncorrectGroup is returned when machineRef has incorrect group
-	ErrMachineRefIncorrectGroup = errors.New("machineRef has incorrect group")
 )
 
 // GetOwnerByoMachine returns the ByoMachine object owning the current resource.
@@ -62,41 +47,4 @@ func GetNodeForByoHost(ctx context.Context, c client.Client, byoHost *infrastruc
 		return nil, fmt.Errorf("failed to get node for ByoHost: %w", err)
 	}
 	return node, nil
-}
-
-// GetByoMachineForHost validates and fetches the ByoMachine referenced in the ByoHost status.
-// It validates that the MachineRef has the correct Kind and Group before fetching.
-func GetByoMachineForHost(ctx context.Context, c client.Client, byoHost *infrastructurev1beta1.ByoHost) (*infrastructurev1beta1.ByoMachine, error) {
-	// Check if the byoHost has a machineRef set
-	if byoHost.Status.MachineRef == nil {
-		return nil, ErrMachineRefNotSet
-	}
-
-	// Validate MachineRef Kind
-	if byoHost.Status.MachineRef.Kind != ByoMachineKind {
-		return nil, fmt.Errorf("%w: expected=%s, got=%s", ErrMachineRefIncorrectKind, ByoMachineKind, byoHost.Status.MachineRef.Kind)
-	}
-
-	// Validate MachineRef Group
-	gv, err := schema.ParseGroupVersion(byoHost.Status.MachineRef.APIVersion)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machineRef APIVersion: %w", err)
-	}
-
-	if gv.Group != infrastructurev1beta1.GroupVersion.Group {
-		return nil, fmt.Errorf("%w: expected=%s, got=%s", ErrMachineRefIncorrectGroup, infrastructurev1beta1.GroupVersion.Group, gv.Group)
-	}
-
-	// Get the ByoMachine object from the machineRef
-	byoMachine := &infrastructurev1beta1.ByoMachine{}
-	byoMachineKey := client.ObjectKey{
-		Namespace: byoHost.Status.MachineRef.Namespace,
-		Name:      byoHost.Status.MachineRef.Name,
-	}
-
-	if err := c.Get(ctx, byoMachineKey, byoMachine); err != nil {
-		return nil, fmt.Errorf("failed to get ByoMachine from machineRef: %w", err)
-	}
-
-	return byoMachine, nil
 }
