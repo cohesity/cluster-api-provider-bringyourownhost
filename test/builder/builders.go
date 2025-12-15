@@ -363,10 +363,9 @@ func (s *SecretBuilder) Build() *corev1.Secret {
 
 // NodeBuilder holds the variables and objects required to build a corev1.Node
 type NodeBuilder struct {
-	namespace      string
-	name           string
-	providerID     string
-	kubeletVersion string
+	namespace  string
+	name       string
+	providerID string
 }
 
 // Node returns a NodeBuilder with the given name and namespace
@@ -380,12 +379,6 @@ func Node(namespace, name string) *NodeBuilder {
 // WithProviderID adds the passed providerID to the NodeBuilder
 func (n *NodeBuilder) WithProviderID(providerID string) *NodeBuilder {
 	n.providerID = providerID
-	return n
-}
-
-// WithKubeletVersion adds the passed kubeletVersion to the NodeBuilder
-func (n *NodeBuilder) WithKubeletVersion(kubeletVersion string) *NodeBuilder {
-	n.kubeletVersion = kubeletVersion
 	return n
 }
 
@@ -404,10 +397,6 @@ func (n *NodeBuilder) Build() *corev1.Node {
 			ProviderID: n.providerID,
 		},
 		Status: corev1.NodeStatus{},
-	}
-
-	if n.kubeletVersion != "" {
-		node.Status.NodeInfo.KubeletVersion = n.kubeletVersion
 	}
 
 	return node

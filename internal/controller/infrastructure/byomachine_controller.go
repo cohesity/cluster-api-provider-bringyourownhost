@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	byohutil "github.com/cohesity/cluster-api-provider-bringyourownhost/util"
 	"github.com/go-logr/logr"
@@ -55,12 +54,7 @@ const (
 	KubeadmControlPlaneKind = "KubeadmControlPlane"
 	// MachineDeploymentKind is the Kind for MachineDeployment
 	MachineSetKind = "MachineSet"
-	// Requeue Time Interval
-	RequeueTimeInterval = 15 * time.Second
 )
-
-// ErrMachineVersionNotSet is returned when machine spec version is not set
-var ErrMachineVersionNotSet = errors.New("machine spec version is not set")
 
 // ByoMachineReconciler reconciles a ByoMachine object
 type ByoMachineReconciler struct {
@@ -78,7 +72,6 @@ type ByoMachineReconciler struct {
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=*,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;machines,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machines;machines/status,verbs=get;list;watch
-// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinesets,verbs=get;watch
 // +kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
@@ -301,15 +294,6 @@ func (r *ByoMachineReconciler) reconcileNormal(ctx context.Context, machineScope
 		}
 	}
 
-	result, err := r.checkNodeVersionMatch(ctx, machineScope)
-	if err != nil {
-		return result, err
-	}
-
-	if result.RequeueAfter > 0 {
-		return result, nil
-	}
-
 	logger.Info("Updating Node with ProviderID")
 	return r.updateNodeProviderID(ctx, machineScope)
 }
@@ -333,61 +317,6 @@ func (r *ByoMachineReconciler) updateNodeProviderID(ctx context.Context, machine
 	machineScope.ByoMachine.Status.Ready = true
 	conditions.MarkTrue(machineScope.ByoMachine, infrastructurev1beta1.BYOHostReady)
 	r.Recorder.Eventf(machineScope.ByoMachine, corev1.EventTypeNormal, "NodeProvisionedSucceeded", "Provisioned Node %s", machineScope.ByoHost.Name)
-	return ctrl.Result{}, nil
-}
-
-// checkNodeVersionMatch verifies that the node's kubelet version matches the desired version in the machine spec.
-// This makes sure that unless all the control plane components and kubelet are upgraded to the desired version,
-// the machine will not be marked as provisioned.
-func (r *ByoMachineReconciler) checkNodeVersionMatch(ctx context.Context, machineScope *byoMachineScope) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithValues("cluster", machineScope.Cluster.Name)
-
-	remoteClient, err := r.getRemoteClient(ctx, machineScope.ByoMachine)
-	if err != nil {
-		logger.Error(err, "failed to get remote client for version check")
-		return ctrl.Result{}, err
-	}
-
-	node, err := byohutil.GetNodeForByoHost(ctx, remoteClient, machineScope.ByoHost)
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get node for version check: %w", err)
-	}
-
-	// Extract the desired version from machine spec
-	if machineScope.Machine.Spec.Version == nil {
-		return ctrl.Result{}, fmt.Errorf("%w: machine=%s", ErrMachineVersionNotSet, machineScope.Machine.Name)
-	}
-
-	desiredVersion := *machineScope.Machine.Spec.Version
-	// Get the node kubelet version
-	nodeVersion := node.Status.NodeInfo.KubeletVersion
-
-	// Parse versions using semantic versioning
-	desiredSemVer, err := semver.NewVersion(desiredVersion)
-	if err != nil {
-		logger.Error(err, "failed to parse desired version", "desiredVersion", desiredVersion)
-		return ctrl.Result{}, fmt.Errorf("failed to parse desired version %s: %w", desiredVersion, err)
-	}
-
-	nodeSemVer, err := semver.NewVersion(nodeVersion)
-	if err != nil {
-		logger.Error(err, "failed to parse node version", "nodeVersion", nodeVersion)
-		return ctrl.Result{}, fmt.Errorf("failed to parse node version %s: %w", nodeVersion, err)
-	}
-
-	desiredMajorMinor := semver.New(desiredSemVer.Major(), desiredSemVer.Minor(), 0, "", "")
-	nodeMajorMinor := semver.New(nodeSemVer.Major(), nodeSemVer.Minor(), 0, "", "")
-
-	if !nodeMajorMinor.Equal(desiredMajorMinor) {
-		logger.Info("Waiting for node major.minor version to match machine spec version",
-			"nodeVersion", nodeVersion, "nodeMajorMinor", nodeMajorMinor,
-			"desiredVersion", desiredVersion, "desiredMajorMinor", desiredMajorMinor)
-		return ctrl.Result{RequeueAfter: RequeueTimeInterval}, nil
-	}
-	logger.Info("Node major.minor version matches machine spec version",
-		"nodeVersion", nodeVersion, "nodeMajorMinor", nodeMajorMinor,
-		"desiredVersion", desiredVersion, "desiredMajorMinor", desiredMajorMinor)
-
 	return ctrl.Result{}, nil
 }
 
