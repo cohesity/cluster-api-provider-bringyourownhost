@@ -134,7 +134,7 @@ func (r *HostReconciler) reconcileNormal(ctx context.Context, byoHost *infrastru
 			return ctrl.Result{}, err
 		}
 
-		err = r.bootstrapK8sNode(ctx, bootstrapScript, byoHost)
+		err = r.bootstrapK8sNode(ctx, bootstrapScript)
 		if err != nil {
 			logger.Error(err, "error in bootstrapping k8s node")
 			r.Recorder.Event(byoHost, corev1.EventTypeWarning, "BootstrapK8sNodeFailed", "k8s Node Bootstrap failed")
@@ -281,7 +281,7 @@ func (r *HostReconciler) hostCleanUp(ctx context.Context, byoHost *infrastructur
 	}
 	conditions.MarkFalse(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded, infrastructurev1beta1.K8sNodeAbsentReason, clusterv1.ConditionSeverityInfo, "")
 
-	err := r.removeSentinelFile(ctx, byoHost)
+	err := r.removeSentinelFile(ctx)
 	if err != nil {
 		return err
 	}
@@ -312,17 +312,21 @@ func (r *HostReconciler) resetNode(ctx context.Context, byoHost *infrastructurev
 	return nil
 }
 
-func (r *HostReconciler) bootstrapK8sNode(ctx context.Context, bootstrapScript string, byoHost *infrastructurev1beta1.ByoHost) error {
+func (r *HostReconciler) bootstrapK8sNode(ctx context.Context, bootstrapScript string) error {
 	logger := ctrl.LoggerFrom(ctx)
 	logger.Info("Bootstraping k8s Node")
-	return cloudinit.ScriptExecutor{
+	err := cloudinit.ScriptExecutor{
 		WriteFilesExecutor:    r.FileWriter,
 		RunCmdExecutor:        r.CmdRunner,
 		ParseTemplateExecutor: r.TemplateParser,
 	}.Execute(bootstrapScript)
+	if err != nil {
+		return fmt.Errorf("failed to execute bootstrap script: %w", err)
+	}
+	return nil
 }
 
-func (r *HostReconciler) removeSentinelFile(ctx context.Context, byoHost *infrastructurev1beta1.ByoHost) error {
+func (r *HostReconciler) removeSentinelFile(ctx context.Context) error {
 	logger := ctrl.LoggerFrom(ctx)
 	logger.Info("Removing the bootstrap sentinel file")
 	if _, err := os.Stat(bootstrapSentinelFile); !os.IsNotExist(err) {
@@ -343,7 +347,7 @@ func (r *HostReconciler) deleteEndpointIP(ctx context.Context, byoHost *infrastr
 			for _, network := range networks {
 				_, err := network.DeleteIP()
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to delete endpoint IP: %w", err)
 				}
 			}
 		}
