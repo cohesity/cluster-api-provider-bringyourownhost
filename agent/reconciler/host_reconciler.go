@@ -37,6 +37,7 @@ type HostReconciler struct {
 	FileWriter          cloudinit.IFileWriter
 	TemplateParser      cloudinit.ITemplateParser
 	Recorder            record.EventRecorder
+	ContainerRuntime    byohutil.ContainerRuntime // Optional: for testing, if nil will be created
 	DownloadPath        string
 	SkipK8sInstallation bool
 }
@@ -47,10 +48,8 @@ const (
 	KubeadmResetCommand = "kubeadm reset --force"
 )
 
-var (
-	// errContainerRuntimeNil is returned when container runtime is nil
-	errContainerRuntimeNil = errors.New("container runtime is nil")
-)
+// errContainerRuntimeNil is returned when container runtime is nil
+var errContainerRuntimeNil = errors.New("container runtime is nil")
 
 // Reconcile handles events for the ByoHost that is registered by this agent process
 func (r *HostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
@@ -350,14 +349,22 @@ func (r *HostReconciler) removeContainers(ctx context.Context) error {
 		return errors.Wrapf(err, "failed to cleanup kubelet")
 	}
 
-	criSocketPath, err := byohutil.DetectCRISocket()
-	if err != nil {
-		return errors.Wrapf(err, "failed to detect cri socket path")
-	}
+	var containerRuntime byohutil.ContainerRuntime
+	if r.ContainerRuntime != nil {
+		// Use injected container runtime (for testing)
+		containerRuntime = r.ContainerRuntime
+	} else {
+		// Create container runtime
+		criSocketPath, detectErr := byohutil.DetectCRISocket()
+		if detectErr != nil {
+			return errors.Wrapf(detectErr, "failed to detect cri socket path")
+		}
 
-	containerRuntime, err := byohutil.NewContainerRuntime(utilsexec.New(), criSocketPath)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create container runtime")
+		var createErr error
+		containerRuntime, createErr = byohutil.NewContainerRuntime(utilsexec.New(), criSocketPath)
+		if createErr != nil {
+			return errors.Wrapf(createErr, "failed to create container runtime")
+		}
 	}
 
 	if containerRuntime == nil {
