@@ -603,7 +603,10 @@ func (r *ByoMachineReconciler) markHostForCleanup(ctx context.Context, machineSc
 	machineScope.ByoHost.Annotations[infrastructurev1beta1.HostCleanupAnnotation] = ""
 
 	// Issue the patch for byohost
-	return helper.Patch(ctx, machineScope.ByoHost)
+	if err := helper.Patch(ctx, machineScope.ByoHost); err != nil {
+		return fmt.Errorf("failed to patch ByoHost: %w", err)
+	}
+	return nil
 }
 
 func (r *ByoMachineReconciler) getInstallerConfig(ctx context.Context, byoMachine *infrastructurev1beta1.ByoMachine) (*unstructured.Unstructured, error) {
