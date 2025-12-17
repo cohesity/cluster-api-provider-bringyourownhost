@@ -19,6 +19,7 @@ go_library(
         "//api/infrastructure/v1beta1",
         "//common/bootstraptoken",
         "//installer",
+        "//util",
         "@com_github_go_logr_logr//:logr",
         "@com_github_pkg_errors//:errors",
         "@io_k8s_api//certificates/v1:certificates",
@@ -51,7 +52,7 @@ go_library(
         "@io_k8s_sigs_controller_runtime//pkg/log",
         "@io_k8s_sigs_controller_runtime//pkg/predicate",
         "@io_k8s_sigs_controller_runtime//pkg/reconcile",
-        "@io_k8s_utils//pointer",
+        "@io_k8s_utils//ptr",
     ],
 )
 
