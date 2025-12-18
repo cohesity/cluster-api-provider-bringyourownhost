@@ -13,6 +13,7 @@ go_library(
         "//agent/registration",
         "//api/infrastructure/v1beta1",
         "//common",
+        "//util",
         "@com_github_kube_vip_kube_vip//pkg/vip",
         "@com_github_pkg_errors//:errors",
         "@io_k8s_api//core/v1:core",
@@ -25,6 +26,7 @@ go_library(
         "@io_k8s_sigs_controller_runtime//:controller-runtime",
         "@io_k8s_sigs_controller_runtime//pkg/client",
         "@io_k8s_sigs_controller_runtime//pkg/manager",
+        "@io_k8s_utils//exec",
         "@org_golang_x_sys//unix",
     ],
 )
