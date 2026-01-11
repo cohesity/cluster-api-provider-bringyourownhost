@@ -110,6 +110,7 @@ linters:
             - github.com/Masterminds/semver/v3
             - github.com/onsi
             - github.com/pkg/errors
+            - github.com/stretchr/testify
             - golang.org/x
             - k8s.io
             - sigs.k8s.io
@@ -139,6 +140,9 @@ linters:
         linters:
           - dupl
           - gosec
+      - path: _test\.go
+        linters:
+          - testpackage
     paths:
       - third_party$
       - builtin$

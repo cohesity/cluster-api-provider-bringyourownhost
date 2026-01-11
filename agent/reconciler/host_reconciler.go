@@ -25,6 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
+	byohutil "github.com/cohesity/cluster-api-provider-bringyourownhost/util"
+	byohruntime "github.com/cohesity/cluster-api-provider-bringyourownhost/util/runtime"
 	"github.com/kube-vip/kube-vip/pkg/vip"
 )
 
@@ -35,6 +37,7 @@ type HostReconciler struct {
 	FileWriter          cloudinit.IFileWriter
 	TemplateParser      cloudinit.ITemplateParser
 	Recorder            record.EventRecorder
+	ContainerRuntime    byohruntime.ContainerRuntime
 	DownloadPath        string
 	SkipK8sInstallation bool
 }
@@ -42,8 +45,11 @@ type HostReconciler struct {
 const (
 	bootstrapSentinelFile = "/run/cluster-api/bootstrap-success.complete"
 	// KubeadmResetCommand is the command to run to force reset/remove nodes' local file system of the files created by kubeadm
-	KubeadmResetCommand = "kubeadm reset --force"
+	KubeadmResetCommand = "kubeadm reset --force --v=5"
 )
+
+// errContainerRuntimeNil is returned when container runtime is nil
+var errContainerRuntimeNil = errors.New("container runtime is nil")
 
 // Reconcile handles events for the ByoHost that is registered by this agent process
 func (r *HostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
@@ -300,9 +306,19 @@ func (r *HostReconciler) hostCleanUp(ctx context.Context, byoHost *infrastructur
 
 func (r *HostReconciler) resetNode(ctx context.Context, byoHost *infrastructurev1beta1.ByoHost) error {
 	logger := ctrl.LoggerFrom(ctx)
+
+	logger.Info("Removing containers")
+	err := r.removeContainers(ctx)
+	if err != nil {
+		r.Recorder.Event(byoHost, corev1.EventTypeWarning, "RemoveContainersFailed", "failed to remove containers using crictl")
+		return errors.Wrapf(err, "failed to remove containers using crictl")
+	}
+
+	logger.Info("Removed containers successfully")
+
 	logger.Info("Running kubeadm reset")
 
-	err := r.CmdRunner.RunCmd(ctx, KubeadmResetCommand)
+	err = r.CmdRunner.RunCmd(ctx, KubeadmResetCommand)
 	if err != nil {
 		r.Recorder.Event(byoHost, corev1.EventTypeWarning, "ResetK8sNodeFailed", "k8s Node Reset failed")
 		return errors.Wrapf(err, "failed to exec kubeadm reset")
@@ -322,6 +338,50 @@ func (r *HostReconciler) bootstrapK8sNode(ctx context.Context, bootstrapScript s
 	}.Execute(bootstrapScript)
 	if err != nil {
 		return fmt.Errorf("failed to execute bootstrap script: %w", err)
+	}
+	return nil
+}
+
+func (r *HostReconciler) removeContainers(ctx context.Context) error {
+	// Cleanup kubelet before removing containers
+	err := byohutil.CleanupKubelet(ctx, r.CmdRunner)
+	if err != nil {
+		return fmt.Errorf("failed to cleanup kubelet: %w", err)
+	}
+
+	var containerRuntime byohruntime.ContainerRuntime
+	if r.ContainerRuntime != nil {
+		// Use injected container runtime (for testing)
+		containerRuntime = r.ContainerRuntime
+	} else {
+		// Create container runtime
+		criSocketPath, detectErr := byohruntime.DetectCRISocket()
+		if detectErr != nil {
+			return fmt.Errorf("failed to detect cri socket path: %w", detectErr)
+		}
+
+		containerRuntime = byohruntime.NewContainerRuntime(criSocketPath)
+	}
+
+	if containerRuntime == nil {
+		return fmt.Errorf("container runtime is nil after initialization: %w", errContainerRuntimeNil)
+	}
+
+	// Connect to the container runtime
+	if err = containerRuntime.Connect(); err != nil {
+		return fmt.Errorf("failed to connect to container runtime: %w", err)
+	}
+
+	// List containers
+	containers, err := containerRuntime.ListKubeContainers()
+	if err != nil {
+		return fmt.Errorf("failed to list containers: %w", err)
+	}
+
+	// Remove containers
+	err = containerRuntime.RemoveContainers(containers)
+	if err != nil {
+		return fmt.Errorf("failed to remove containers: %w", err)
 	}
 	return nil
 }

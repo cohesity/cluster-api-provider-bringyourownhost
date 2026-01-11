@@ -58,6 +58,8 @@ use_repo(
     "io_k8s_client_go",
     "io_k8s_cluster_bootstrap",
     "io_k8s_component_base",
+    "io_k8s_cri_api",
+    "io_k8s_cri_client",
     "io_k8s_klog_v2",
     "io_k8s_sigs_cluster_api",
     "io_k8s_sigs_cluster_api_test",

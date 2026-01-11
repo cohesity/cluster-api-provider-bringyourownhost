@@ -13,6 +13,8 @@ go_library(
         "//agent/registration",
         "//api/infrastructure/v1beta1",
         "//common",
+        "//util",
+        "//util/runtime",
         "@com_github_kube_vip_kube_vip//pkg/vip",
         "@com_github_pkg_errors//:errors",
         "@io_k8s_api//core/v1:core",
