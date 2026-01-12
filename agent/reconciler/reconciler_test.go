@@ -13,6 +13,7 @@ import (
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
 	"github.com/cohesity/cluster-api-provider-bringyourownhost/test/builder"
 	eventutils "github.com/cohesity/cluster-api-provider-bringyourownhost/test/utils/events"
+	byohruntime "github.com/cohesity/cluster-api-provider-bringyourownhost/util/runtime"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -25,18 +26,93 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 )
 
+// mockContainerRuntimeWrapper wraps a real ContainerRuntime and allows us to control its behavior
+// We embed the real runtime to satisfy the interface, but override methods for test control
+type mockContainerRuntimeWrapper struct {
+	byohruntime.ContainerRuntime
+	connectErr          error
+	listContainersErr   error
+	removeContainersErr error
+	containers          []string
+	useMockedBehavior   bool // If true, use mocked behavior; if false, delegate to real runtime
+}
+
+func newMockContainerRuntime() *mockContainerRuntimeWrapper {
+	// Create a real runtime instance and embed it
+	// This allows us to satisfy the interface while controlling behavior
+	realRuntime := byohruntime.NewContainerRuntime("unix:///var/run/containerd/containerd.sock")
+	return &mockContainerRuntimeWrapper{
+		ContainerRuntime:  realRuntime,
+		containers:        []string{},
+		useMockedBehavior: true, // Default to using mocked behavior
+	}
+}
+
+func (m *mockContainerRuntimeWrapper) Connect() error {
+	if m.useMockedBehavior {
+		return m.connectErr
+	}
+	// Delegate to embedded runtime if not using mocked behavior
+	if err := m.ContainerRuntime.Connect(); err != nil {
+		return fmt.Errorf("failed to connect container runtime: %w", err)
+	}
+	return nil
+}
+
+func (m *mockContainerRuntimeWrapper) IsRunning() error {
+	if m.useMockedBehavior {
+		return nil // Assume running for tests
+	}
+	if err := m.ContainerRuntime.IsRunning(); err != nil {
+		return fmt.Errorf("failed to check if container runtime is running: %w", err)
+	}
+	return nil
+}
+
+func (m *mockContainerRuntimeWrapper) ListKubeContainers() ([]string, error) {
+	if m.useMockedBehavior {
+		if m.listContainersErr != nil {
+			return nil, m.listContainersErr
+		}
+		return m.containers, nil
+	}
+	containers, err := m.ContainerRuntime.ListKubeContainers()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list kube containers: %w", err)
+	}
+	return containers, nil
+}
+
+func (m *mockContainerRuntimeWrapper) RemoveContainers(containers []string) error {
+	if m.useMockedBehavior {
+		return m.removeContainersErr
+	}
+	if err := m.ContainerRuntime.RemoveContainers(containers); err != nil {
+		return fmt.Errorf("failed to remove containers: %w", err)
+	}
+	return nil
+}
+
+var (
+	errUninstallScriptExecutionFailed = errors.New("failed to execute uninstall script")
+	errHostCleanupFailed              = errors.New("failed to cleanup host")
+	errBootstrapFailed                = errors.New("bootstrap failed")
+	errKubeadmResetFailed             = errors.New("kubeadm reset failed")
+)
+
 var _ = Describe("Byohost Agent Tests", func() {
 	var (
-		ctx                = context.TODO()
-		ns                 = "default"
-		hostName           = "test-host"
-		byoHost            *infrastructurev1beta1.ByoHost
-		byoMachine         *infrastructurev1beta1.ByoMachine
-		byoHostLookupKey   types.NamespacedName
-		bootstrapSecret    *corev1.Secret
-		installationSecret *corev1.Secret
-		recorder           *record.FakeRecorder
-		uninstallScript    string
+		ctx                  = context.TODO()
+		ns                   = "default"
+		hostName             = "test-host"
+		byoHost              *infrastructurev1beta1.ByoHost
+		byoMachine           *infrastructurev1beta1.ByoMachine
+		byoHostLookupKey     types.NamespacedName
+		bootstrapSecret      *corev1.Secret
+		installationSecret   *corev1.Secret
+		recorder             *record.FakeRecorder
+		uninstallScript      string
+		mockContainerRuntime *mockContainerRuntimeWrapper
 	)
 
 	BeforeEach(func() {
@@ -44,6 +120,7 @@ var _ = Describe("Byohost Agent Tests", func() {
 		fakeFileWriter = &cloudinitfakes.FakeIFileWriter{}
 		fakeTemplateParser = &cloudinitfakes.FakeITemplateParser{}
 		recorder = record.NewFakeRecorder(32)
+		mockContainerRuntime = newMockContainerRuntime()
 		hostReconciler = &reconciler.HostReconciler{
 			Client:              k8sClient,
 			CmdRunner:           fakeCommandRunner,
@@ -51,6 +128,7 @@ var _ = Describe("Byohost Agent Tests", func() {
 			TemplateParser:      fakeTemplateParser,
 			Recorder:            recorder,
 			SkipK8sInstallation: false,
+			ContainerRuntime:    mockContainerRuntime,
 		}
 	})
 
@@ -315,7 +393,16 @@ runCmd:
 						conditions.MarkTrue(byoHost, infrastructurev1beta1.K8sComponentsInstallationSucceeded)
 						Expect(patchHelper.Patch(ctx, byoHost, patch.WithStatusObservedGeneration{})).NotTo(HaveOccurred())
 
-						fakeCommandRunner.RunCmdReturns(errors.New("I failed"))
+						// Flow: bootstrap script executes first (fails), then resetNode is called
+						// Call order:
+						//   0: bootstrap script runCmd (fail this to trigger resetNode)
+						//   1: CleanupKubelet - remove kubelet binary (succeed)
+						//   2: CleanupKubelet - stop kubelet service (succeed)
+						//   3: kubeadm reset (fail this to get ResetK8sNodeFailed event)
+						fakeCommandRunner.RunCmdReturnsOnCall(0, errBootstrapFailed)    // bootstrap script fails
+						fakeCommandRunner.RunCmdReturnsOnCall(1, nil)                   // remove kubelet binary succeeds
+						fakeCommandRunner.RunCmdReturnsOnCall(2, nil)                   // stop kubelet service succeeds
+						fakeCommandRunner.RunCmdReturnsOnCall(3, errKubeadmResetFailed) // kubeadm reset fails
 
 						result, reconcilerErr := hostReconciler.Reconcile(ctx, controllerruntime.Request{
 							NamespacedName: byoHostLookupKey,
@@ -496,6 +583,18 @@ runCmd:
 				conditions.MarkTrue(byoHost, infrastructurev1beta1.K8sNodeBootstrapSucceeded)
 				conditions.MarkTrue(byoHost, infrastructurev1beta1.K8sComponentsInstallationSucceeded)
 				Expect(patchHelper.Patch(ctx, byoHost, patch.WithStatusObservedGeneration{})).NotTo(HaveOccurred())
+
+				// Ensure mock container runtime is set up for cleanup tests
+				if mockContainerRuntime == nil {
+					mockContainerRuntime = newMockContainerRuntime()
+				}
+				// Reset mock container runtime for each test
+				mockContainerRuntime.containers = []string{}
+				mockContainerRuntime.listContainersErr = nil
+				mockContainerRuntime.removeContainersErr = nil
+				mockContainerRuntime.connectErr = nil
+				// Ensure hostReconciler has the mock container runtime
+				hostReconciler.ContainerRuntime = mockContainerRuntime
 			})
 
 			It("should skip node reset if k8s component installation failed", func() {
@@ -526,9 +625,17 @@ runCmd:
 				Expect(result).To(Equal(controllerruntime.Result{}))
 				Expect(reconcilerErr).ToNot(HaveOccurred())
 
-				// assert kubeadm reset & uninstall script is called
-				Expect(fakeCommandRunner.RunCmdCallCount()).To(Equal(2))
-				_, resetCommand := fakeCommandRunner.RunCmdArgsForCall(0)
+				// assert cleanup operations are called:
+				// 0: CleanupKubelet - remove kubelet binary (rm -f /usr/bin/kubelet)
+				// 1: CleanupKubelet - stop kubelet service (systemctl stop kubelet || true)
+				// 2: kubeadm reset
+				// 3: uninstall script
+				Expect(fakeCommandRunner.RunCmdCallCount()).To(Equal(4))
+				_, removeKubeletCmd := fakeCommandRunner.RunCmdArgsForCall(0)
+				Expect(removeKubeletCmd).To(Equal("rm -f /usr/bin/kubelet"))
+				_, stopKubeletCmd := fakeCommandRunner.RunCmdArgsForCall(1)
+				Expect(stopKubeletCmd).To(Equal("systemctl stop kubelet || true"))
+				_, resetCommand := fakeCommandRunner.RunCmdArgsForCall(2)
 				Expect(resetCommand).To(Equal(reconciler.KubeadmResetCommand))
 				updatedByoHost := &infrastructurev1beta1.ByoHost{}
 				err := k8sClient.Get(ctx, byoHostLookupKey, updatedByoHost)
@@ -571,7 +678,8 @@ runCmd:
 			})
 
 			It("should return error if uninstall script execution failed ", func() {
-				fakeCommandRunner.RunCmdReturnsOnCall(1, errors.New("failed to execute uninstall script"))
+				// Call 0: remove kubelet binary, Call 1: stop kubelet service, Call 2: kubeadm reset, Call 3: uninstall script (fail this one)
+				fakeCommandRunner.RunCmdReturnsOnCall(3, errUninstallScriptExecutionFailed)
 				uninstallScript = `testcommand`
 				byoHost.Spec.UninstallationScript = &uninstallScript
 				Expect(patchHelper.Patch(ctx, byoHost, patch.WithStatusObservedGeneration{})).NotTo(HaveOccurred())
@@ -666,7 +774,10 @@ runCmd:
 			})
 
 			It("should return error if host cleanup failed", func() {
-				fakeCommandRunner.RunCmdReturns(errors.New("failed to cleanup host"))
+				// Fail on kubeadm reset (call 2), after kubelet cleanup succeeds (calls 0 and 1)
+				fakeCommandRunner.RunCmdReturnsOnCall(0, nil)                  // remove kubelet binary succeeds
+				fakeCommandRunner.RunCmdReturnsOnCall(1, nil)                  // stop kubelet service succeeds
+				fakeCommandRunner.RunCmdReturnsOnCall(2, errHostCleanupFailed) // kubeadm reset fails
 
 				result, reconcilerErr := hostReconciler.Reconcile(ctx, controllerruntime.Request{
 					NamespacedName: byoHostLookupKey,

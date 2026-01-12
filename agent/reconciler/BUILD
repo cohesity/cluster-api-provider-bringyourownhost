@@ -43,6 +43,7 @@ go_test(
         "//api/infrastructure/v1beta1",
         "//test/builder",
         "//test/utils/events",
+        "//util/runtime",
         "@com_github_onsi_ginkgo_v2//:ginkgo",
         "@com_github_onsi_gomega//:gomega",
         "@io_k8s_api//core/v1:core",
