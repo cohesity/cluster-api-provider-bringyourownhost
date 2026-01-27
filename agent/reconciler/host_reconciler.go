@@ -25,7 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	infrastructurev1beta1 "github.com/cohesity/cluster-api-provider-bringyourownhost/api/infrastructure/v1beta1"
-	byohutil "github.com/cohesity/cluster-api-provider-bringyourownhost/util"
 	byohruntime "github.com/cohesity/cluster-api-provider-bringyourownhost/util/runtime"
 	"github.com/kube-vip/kube-vip/pkg/vip"
 )
@@ -46,6 +45,11 @@ const (
 	bootstrapSentinelFile = "/run/cluster-api/bootstrap-success.complete"
 	// KubeadmResetCommand is the command to run to force reset/remove nodes' local file system of the files created by kubeadm
 	KubeadmResetCommand = "kubeadm reset --force --v=5"
+
+	// Kubelet cleanup commands
+	removeKubeletBinaryCmd       = "rm -f /usr/bin/kubelet"
+	checkKubeletServiceActiveCmd = "systemctl is-active --quiet kubelet"
+	stopKubeletServiceCmd        = "systemctl stop kubelet"
 )
 
 // errContainerRuntimeNil is returned when container runtime is nil
@@ -340,7 +344,7 @@ func (r *HostReconciler) bootstrapK8sNode(ctx context.Context, bootstrapScript s
 
 func (r *HostReconciler) removeContainers(ctx context.Context) error {
 	// Cleanup kubelet before removing containers
-	err := byohutil.CleanupKubelet(ctx, r.CmdRunner)
+	err := r.cleanupKubelet(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to cleanup kubelet: %w", err)
 	}
@@ -463,6 +467,33 @@ func (r *HostReconciler) checkAndPopulateUninstallScriptFromInstallSecret(ctx co
 	}
 
 	byoHost.Spec.UninstallationScript = &uninstallScript
+
+	return nil
+}
+
+// CleanupKubelet removes the kubelet binary and stops the kubelet service
+func (r *HostReconciler) cleanupKubelet(ctx context.Context) error {
+	logger := ctrl.LoggerFrom(ctx)
+
+	// First remove kubelet binary
+	logger.Info("Removing kubelet binary")
+	if err := r.CmdRunner.RunCmd(ctx, removeKubeletBinaryCmd); err != nil {
+		return fmt.Errorf("failed to remove kubelet binary: %w", err)
+	}
+
+	// Check if kubelet service is running before stopping it
+	logger.Info("Checking if kubelet service is active")
+	if err := r.CmdRunner.RunCmd(ctx, checkKubeletServiceActiveCmd); err != nil {
+		// Service is not active, skip stopping it
+		logger.Info("Kubelet service is not active, skipping stop")
+		return nil
+	}
+
+	// Service is active, stop it
+	logger.Info("Stopping kubelet service")
+	if err := r.CmdRunner.RunCmd(ctx, stopKubeletServiceCmd); err != nil {
+		return fmt.Errorf("failed to stop kubelet service: %w", err)
+	}
 
 	return nil
 }
