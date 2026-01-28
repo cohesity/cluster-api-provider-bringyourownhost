@@ -397,12 +397,14 @@ runCmd:
 						// Call order:
 						//   0: bootstrap script runCmd (fail this to trigger resetNode)
 						//   1: CleanupKubelet - remove kubelet binary (succeed)
-						//   2: CleanupKubelet - stop kubelet service (succeed)
-						//   3: kubeadm reset (fail this to get ResetK8sNodeFailed event)
+						//   2: CleanupKubelet - check if kubelet service is active (succeed)
+						//   3: CleanupKubelet - stop kubelet service (succeed)
+						//   4: kubeadm reset (fail this to get ResetK8sNodeFailed event)
 						fakeCommandRunner.RunCmdReturnsOnCall(0, errBootstrapFailed)    // bootstrap script fails
 						fakeCommandRunner.RunCmdReturnsOnCall(1, nil)                   // remove kubelet binary succeeds
-						fakeCommandRunner.RunCmdReturnsOnCall(2, nil)                   // stop kubelet service succeeds
-						fakeCommandRunner.RunCmdReturnsOnCall(3, errKubeadmResetFailed) // kubeadm reset fails
+						fakeCommandRunner.RunCmdReturnsOnCall(2, nil)                   // check kubelet service is active succeeds
+						fakeCommandRunner.RunCmdReturnsOnCall(3, nil)                   // stop kubelet service succeeds
+						fakeCommandRunner.RunCmdReturnsOnCall(4, errKubeadmResetFailed) // kubeadm reset fails
 
 						result, reconcilerErr := hostReconciler.Reconcile(ctx, controllerruntime.Request{
 							NamespacedName: byoHostLookupKey,
@@ -627,15 +629,18 @@ runCmd:
 
 				// assert cleanup operations are called:
 				// 0: CleanupKubelet - remove kubelet binary (rm -f /usr/bin/kubelet)
-				// 1: CleanupKubelet - stop kubelet service (systemctl stop kubelet || true)
-				// 2: kubeadm reset
-				// 3: uninstall script
-				Expect(fakeCommandRunner.RunCmdCallCount()).To(Equal(4))
+				// 1: CleanupKubelet - check if kubelet service is active (systemctl is-active --quiet kubelet)
+				// 2: CleanupKubelet - stop kubelet service (systemctl stop kubelet)
+				// 3: kubeadm reset
+				// 4: uninstall script
+				Expect(fakeCommandRunner.RunCmdCallCount()).To(Equal(5))
 				_, removeKubeletCmd := fakeCommandRunner.RunCmdArgsForCall(0)
 				Expect(removeKubeletCmd).To(Equal("rm -f /usr/bin/kubelet"))
-				_, stopKubeletCmd := fakeCommandRunner.RunCmdArgsForCall(1)
-				Expect(stopKubeletCmd).To(Equal("systemctl stop kubelet || true"))
-				_, resetCommand := fakeCommandRunner.RunCmdArgsForCall(2)
+				_, checkKubeletCmd := fakeCommandRunner.RunCmdArgsForCall(1)
+				Expect(checkKubeletCmd).To(Equal("systemctl is-active --quiet kubelet"))
+				_, stopKubeletCmd := fakeCommandRunner.RunCmdArgsForCall(2)
+				Expect(stopKubeletCmd).To(Equal("systemctl stop kubelet"))
+				_, resetCommand := fakeCommandRunner.RunCmdArgsForCall(3)
 				Expect(resetCommand).To(Equal(reconciler.KubeadmResetCommand))
 				updatedByoHost := &infrastructurev1beta1.ByoHost{}
 				err := k8sClient.Get(ctx, byoHostLookupKey, updatedByoHost)
@@ -678,8 +683,8 @@ runCmd:
 			})
 
 			It("should return error if uninstall script execution failed ", func() {
-				// Call 0: remove kubelet binary, Call 1: stop kubelet service, Call 2: kubeadm reset, Call 3: uninstall script (fail this one)
-				fakeCommandRunner.RunCmdReturnsOnCall(3, errUninstallScriptExecutionFailed)
+				// Call 0: remove kubelet binary, Call 1: check kubelet service is active, Call 2: stop kubelet service, Call 3: kubeadm reset, Call 4: uninstall script (fail this one)
+				fakeCommandRunner.RunCmdReturnsOnCall(4, errUninstallScriptExecutionFailed)
 				uninstallScript = `testcommand`
 				byoHost.Spec.UninstallationScript = &uninstallScript
 				Expect(patchHelper.Patch(ctx, byoHost, patch.WithStatusObservedGeneration{})).NotTo(HaveOccurred())
@@ -774,10 +779,11 @@ runCmd:
 			})
 
 			It("should return error if host cleanup failed", func() {
-				// Fail on kubeadm reset (call 2), after kubelet cleanup succeeds (calls 0 and 1)
+				// Fail on kubeadm reset (call 3), after kubelet cleanup succeeds (calls 0, 1, and 2)
 				fakeCommandRunner.RunCmdReturnsOnCall(0, nil)                  // remove kubelet binary succeeds
-				fakeCommandRunner.RunCmdReturnsOnCall(1, nil)                  // stop kubelet service succeeds
-				fakeCommandRunner.RunCmdReturnsOnCall(2, errHostCleanupFailed) // kubeadm reset fails
+				fakeCommandRunner.RunCmdReturnsOnCall(1, nil)                  // check kubelet service is active succeeds
+				fakeCommandRunner.RunCmdReturnsOnCall(2, nil)                  // stop kubelet service succeeds
+				fakeCommandRunner.RunCmdReturnsOnCall(3, errHostCleanupFailed) // kubeadm reset fails
 
 				result, reconcilerErr := hostReconciler.Reconcile(ctx, controllerruntime.Request{
 					NamespacedName: byoHostLookupKey,
